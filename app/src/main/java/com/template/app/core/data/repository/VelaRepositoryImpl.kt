@@ -50,6 +50,12 @@ class VelaRepositoryImpl @Inject constructor(
     override fun observeResolution(): Flow<VelaResolution?> =
         velaDao.observeResolution().map { it?.toDomain() }
 
+    override fun observeCpuUsage(): Flow<VelaCpuUsage?> =
+        velaDao.observeCpuUsage().map { it?.toDomain() }
+
+    override fun observeRamUsage(): Flow<VelaRamUsage?> =
+        velaDao.observeRamUsage().map { it?.toDomain() }
+
     // --- Actions & Refreshing ---
 
     override suspend fun getHealth(): Resource<VelaHealth> = safeApiCall {
@@ -131,9 +137,9 @@ class VelaRepositoryImpl @Inject constructor(
         val domains = apiService.getDiskUsage().usage?.map {
             VelaDiskUsage(
                 mountpoint = it.mountpoint ?: "",
-                total = it.total ?: 0L,
-                used = it.used ?: 0L,
-                free = it.free ?: 0L,
+                total = it.total ?: "-",
+                used = it.used?: "-",
+                free = it.free ?: "-",
                 percent = it.percent ?: 0.0
             )
         } ?: emptyList()
@@ -194,7 +200,8 @@ class VelaRepositoryImpl @Inject constructor(
                 album = it.album,
                 status = it.status,
                 positionSeconds = it.positionSeconds,
-                lengthSeconds = it.lengthSeconds
+                lengthSeconds = it.lengthSeconds,
+                artUrl = it.artUrl
             )
             velaDao.upsertMedia(VelaMediaEntity.fromDomain(domain))
             domain
@@ -221,6 +228,20 @@ class VelaRepositoryImpl @Inject constructor(
         val brightness = apiService.getBrightness().brightness?.toInt() ?: 0
         velaDao.upsertBrightness(VelaBrightnessEntity.fromDomain(VelaBrightness(brightness)))
         brightness
+    }
+
+    override suspend fun getCpuUsage(): Resource<VelaCpuUsage> = safeApiCall {
+        val res = apiService.getMonitorCpu()
+        val domain = VelaCpuUsage(res.overall ?: 0.0)
+        velaDao.upsertCpuUsage(VelaCpuUsageEntity.fromDomain(domain))
+        domain
+    }
+
+    override suspend fun getRamUsage(): Resource<VelaRamUsage> = safeApiCall {
+        val res = apiService.getMonitorRam()
+        val domain = VelaRamUsage(res.percent ?: 0.0)
+        velaDao.upsertRamUsage(VelaRamUsageEntity.fromDomain(domain))
+        domain
     }
 
     private fun parseProcessesResiliently(jsonStr: String): List<VelaProcess> {

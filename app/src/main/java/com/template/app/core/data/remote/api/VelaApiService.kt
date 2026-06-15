@@ -237,6 +237,14 @@ interface VelaApiService {
     @POST("processes/window/close")
     suspend fun closeWindow(@Body body: WindowActionRequest): GenericResponse
 
+    // ── Monitor ─────────────────────────────────────────────────────────────
+
+    @GET("monitor/cpu")
+    suspend fun getMonitorCpu(): CpuResponse
+
+    @GET("monitor/ram")
+    suspend fun getMonitorRam(): RamResponse
+
     // ── Input Control ─────────────────────────────────────────────────────────
 
     @Headers("X-Confirm-Input: true")

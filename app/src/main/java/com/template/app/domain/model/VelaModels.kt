@@ -15,9 +15,9 @@ data class VelaFileInfo(
 
 data class VelaDiskUsage(
     val mountpoint: String,
-    val total: Long,
-    val used: Long,
-    val free: Long,
+    val total: String,
+    val used: String,
+    val free: String,
     val percent: Double
 )
 
@@ -45,7 +45,8 @@ data class VelaMediaState(
     val album: String?,
     val status: String?,
     val positionSeconds: Double?,
-    val lengthSeconds: Double?
+    val lengthSeconds: Double?,
+    val artUrl: String? = null
 )
 
 data class VelaNotification(
@@ -71,4 +72,12 @@ data class VelaResolution(
     val height: Int,
     val refresh: Double,
     val output: String?
+)
+
+data class VelaCpuUsage(
+    val overall: Double
+)
+
+data class VelaRamUsage(
+    val percent: Double
 )

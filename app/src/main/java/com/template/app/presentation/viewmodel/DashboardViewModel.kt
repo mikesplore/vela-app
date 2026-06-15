@@ -9,10 +9,14 @@ import com.template.app.domain.model.*
 import com.template.app.domain.repository.VelaRepository
 import com.template.app.domain.usecase.ClearSettingsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.util.Locale
 import javax.inject.Inject
+import kotlin.math.ln
+import kotlin.math.pow
 
 data class DashboardState(
     val isConnected: Boolean = false,
@@ -26,6 +30,8 @@ data class DashboardState(
     val brightness: Int = 0,
     val processes: List<VelaProcess> = emptyList(),
     val processLimit: Int = 5,
+    val cpuUsage: Double = 0.0,
+    val ramUsage: Double = 0.0,
     val activeWindow: String? = null,
     val disks: List<VelaDiskUsage> = emptyList(),
     val clipboardText: String = "",
@@ -51,6 +57,7 @@ class DashboardViewModel @Inject constructor(
         startUptimeTicking()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeData() {
         velaRepository.observeHealth()
             .onEach { health -> _state.update { it.copy(health = health, uptimeSeconds = health?.uptimeSeconds ?: it.uptimeSeconds) } }
@@ -77,11 +84,27 @@ class DashboardViewModel @Inject constructor(
             .launchIn(viewModelScope)
 
         velaRepository.observeDisks()
-            .onEach { disks -> _state.update { it.copy(disks = disks) } }
+            .onEach { rawDisks ->
+                val formattedDisks = rawDisks.map { disk ->
+                    disk.copy(
+                        used = formatBytes(disk.used),
+                        total = formatBytes(disk.total)
+                    )
+                }
+                _state.update { it.copy(disks = formattedDisks) }
+            }
             .launchIn(viewModelScope)
 
         velaRepository.observeBrightness()
             .onEach { b -> b?.let { brightness -> _state.update { it.copy(brightness = brightness.value) } } }
+            .launchIn(viewModelScope)
+
+        velaRepository.observeCpuUsage()
+            .onEach { cpu -> cpu?.let { usage -> _state.update { it.copy(cpuUsage = usage.overall) } } }
+            .launchIn(viewModelScope)
+
+        velaRepository.observeRamUsage()
+            .onEach { ram -> ram?.let { usage -> _state.update { it.copy(ramUsage = usage.percent) } } }
             .launchIn(viewModelScope)
 
         _processLimit
@@ -122,6 +145,8 @@ class DashboardViewModel @Inject constructor(
             velaRepository.getVolume()
             velaRepository.getBrightness()
             velaRepository.getProcesses()
+            velaRepository.getCpuUsage()
+            velaRepository.getRamUsage()
             val activeWindowRes = velaRepository.getActiveWindow()
             velaRepository.getDiskUsage()
             val clipboardRes = velaRepository.readClipboard()
@@ -204,5 +229,26 @@ class DashboardViewModel @Inject constructor(
         _state.update { it.copy(screenshot = null) }
     }
 
+    fun formatBytes(bytesStr: String?): String {
+        if (bytesStr.isNullOrBlank()) return "0.0 B"
+
+        // 1. Clean the input string to isolate the first raw line/number block
+        val cleanInput = bytesStr.split("\n")
+            .firstOrNull()
+            ?.trim() ?: "0"
+
+        // 2. Safely parse it to a Long. If it fails, return the original fallback
+        val bytes = cleanInput.toLongOrNull() ?: return bytesStr
+        if (bytes < 1024) return "$bytes B"
+
+        // 3. Bitwise scaling calculation
+        val exp = (63 - java.lang.Long.numberOfLeadingZeros(bytes)) / 10
+        val units = arrayOf("KB", "MB", "GB", "TB", "PB")
+
+        // 4. Return a pristine formatted String with Locale safety
+        return String.format(Locale.ROOT, "%.1f %s", bytes.toDouble() / (1L shl (exp * 10)), units[exp - 1])
+    }
+
     private fun <T> Resource<T>.dataOrNull(): T? = (this as? Resource.Success)?.data
 }
+

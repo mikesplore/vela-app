@@ -115,4 +115,16 @@ interface VelaDao {
 
     @Upsert
     suspend fun upsertResolution(resolution: VelaResolutionEntity)
+
+    @Query("SELECT * FROM vela_cpu_usage WHERE id = 0")
+    fun observeCpuUsage(): Flow<VelaCpuUsageEntity?>
+
+    @Upsert
+    suspend fun upsertCpuUsage(cpuUsage: VelaCpuUsageEntity)
+
+    @Query("SELECT * FROM vela_ram_usage WHERE id = 0")
+    fun observeRamUsage(): Flow<VelaRamUsageEntity?>
+
+    @Upsert
+    suspend fun upsertRamUsage(ramUsage: VelaRamUsageEntity)
 }

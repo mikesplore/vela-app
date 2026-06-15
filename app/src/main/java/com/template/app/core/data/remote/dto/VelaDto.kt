@@ -147,9 +147,9 @@ data class FileRenameRequest(
 @JsonClass(generateAdapter = true)
 data class DiskUsageItem(
     val mountpoint: String? = null,
-    val total: Long? = null,
-    val used: Long? = null,
-    val free: Long? = null,
+    val total: String? = null,
+    val used: String? = null,
+    val free: String? = null,
     val percent: Double? = null,
     val filesystem: String? = null
 )
@@ -310,6 +310,8 @@ data class MediaNowPlayingResponse(
     val artist: String? = null,
     val album: String? = null,
     val status: String? = null,
+
+    @Json(name = "art_url") val artUrl: String? = null,
     @Json(name = "position_seconds") val positionSeconds: Double? = null,
     @Json(name = "length_seconds") val lengthSeconds: Double? = null
 )
@@ -325,13 +327,13 @@ data class MediaSeekRequest(
 data class ProcessItem(
     val pid: Int? = null,
     val name: String? = null,
-    val cpu: Double? = null,
-    val mem: Double? = null
+    @Json(name = "cpu_percent") val cpu: Double? = null,
+    @Json(name = "memory_percent") val mem: Double? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class ProcessesResponse(
-    val processes: List<ProcessItem>? = null
+    @Json(name = "top_by_cpu") val processes: List<ProcessItem>? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -348,6 +350,23 @@ data class ActiveWindowResponse(
 @JsonClass(generateAdapter = true)
 data class WindowActionRequest(
     @Json(name = "window_id") val windowId: String
+)
+
+// ── Monitor ──
+
+@JsonClass(generateAdapter = true)
+data class CpuResponse(
+    val overall: Double? = null,
+    @Json(name = "per_core") val perCore: List<Double>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RamResponse(
+    val total: Long? = null,
+    val available: Long? = null,
+    val used: Long? = null,
+    val percent: Double? = null,
+    @Json(name = "swap_percent") val swapPercent: Double? = null
 )
 
 // ── Input ──

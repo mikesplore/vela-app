@@ -1,10 +1,10 @@
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)      // <--- 1. Uncomment/Add this
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.ksp)                // <--- 2. Move KSP above Hilt
-    alias(libs.plugins.hilt)               // <--- 3. Hilt must come after Android/KSP
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -20,13 +20,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // ──── BuildConfig fields ────────────────────────────────────────────
-        // Override per build flavor below; consumed in NetworkModule.kt
         buildConfigField("String", "BASE_URL", "\"https://api.example.com/\"")
         buildConfigField("Boolean", "ENABLE_LOGGING", "true")
     }
 
-    // ──── Build Types ───────────────────────────────────────────────────────
     buildTypes {
         debug {
             isDebuggable = true
@@ -46,7 +43,6 @@ android {
         }
     }
 
-    // ──── Product Flavors (optional, remove if not needed) ──────────────────
     flavorDimensions += "environment"
     productFlavors {
         create("staging") {
@@ -73,45 +69,36 @@ android {
 }
 
 dependencies {
-    // ──── Core ──────────────────────────────────────────────────────────────
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.splashscreen)
 
-    // ──── Lifecycle ─────────────────────────────────────────────────────────
     implementation(libs.bundles.lifecycle)
 
-    // ──── Compose ───────────────────────────────────────────────────────────
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-
-    // ──── Navigation ────────────────────────────────────────────────────────
     implementation(libs.androidx.navigation.compose)
 
-    // ──── Hilt (DI) ─────────────────────────────────────────────────────────
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
     implementation(libs.hilt.navigation.compose)
 
-    // ──── Networking ────────────────────────────────────────────────────────
     implementation(libs.bundles.networking)
     ksp(libs.moshi.kotlin.codegen)
 
-    // ──── Room ──────────────────────────────────────────────────────────────
     implementation(libs.bundles.room)
     ksp(libs.room.compiler)
 
-    // ──── DataStore ─────────────────────────────────────────────────────────
     implementation(libs.datastore.preferences)
 
-    // ──── Coroutines ────────────────────────────────────────────────────────
     implementation(libs.kotlinx.coroutines.android)
 
-    // ──── Testing ───────────────────────────────────────────────────────────
+    implementation(libs.coil.compose)
+
     testImplementation(libs.bundles.testing)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

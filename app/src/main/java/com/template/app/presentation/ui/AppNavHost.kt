@@ -22,10 +22,13 @@ object Routes {
 }
 
 @Composable
-fun AppNavHost(navController: NavHostController) {
+fun AppNavHost(
+    navController: NavHostController,
+    startDestination: String = Routes.ONBOARDING
+) {
     NavHost(
         navController = navController,
-        startDestination = Routes.ONBOARDING
+        startDestination = startDestination
     ) {
         composable(Routes.ONBOARDING) {
             OnboardingScreen(

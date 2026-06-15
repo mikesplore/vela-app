@@ -1,8 +1,7 @@
 package com.template.app.presentation.ui.screens
 
 import android.graphics.Bitmap
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,431 +9,384 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
 import com.template.app.domain.model.*
+import java.util.Locale
 
-// ─── Base Card Shell ─────────────────────────────────────────────────────────
+// ─── Design tokens ────────────────────────────────────────────────────────────
+
+private val CardShape       = RoundedCornerShape(16.dp)
+private val InnerShape      = RoundedCornerShape(10.dp)
+private val BarHeight       = 3.dp
+private val CardPadding     = 20.dp
+private val SectionSpacing  = 20.dp
+
+private fun diskColor(pct: Double, cs: ColorScheme): Color = when {
+    pct > 85 -> cs.error
+    pct > 60 -> Color(0xFFFFB300)
+    else     -> cs.primary
+}
+private fun signalColor(signal: Int, cs: ColorScheme): Color = when {
+    signal > 70 -> Color(0xFF4CAF50)
+    signal > 40 -> Color(0xFFFFB300)
+    else        -> cs.error
+}
+
+// ─── Base card ────────────────────────────────────────────────────────────────
+//
+// VelaCard is now transparent to match the screen's background gradient, making
+// the dashboard feel lighter and more integrated.
 
 @Composable
-private fun OrbitalCard(
+private fun VelaCard(
     modifier: Modifier = Modifier,
-    accentColor: Color = MaterialTheme.colorScheme.primary,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.Transparent)
+            .padding(CardPadding),
+        content = content
+    )
+}
+
+// ─── Section header ───────────────────────────────────────────────────────────
+
+@Composable
+private fun VelaSectionHeader(label: String) {
+    Text(
+        text = label,
+        fontSize = 18.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.6.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+    )
+}
+
+// ─── Thin progress bar ────────────────────────────────────────────────────────
+
+@Composable
+private fun ThinBar(
+    progress: Float,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    val cs = MaterialTheme.colorScheme
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(colorScheme.surfaceContainer)
-            .border(
-                width = 1.dp,
-                brush = Brush.verticalGradient(
-                    listOf(accentColor.copy(alpha = 0.35f), colorScheme.outlineVariant)
-                ),
-                shape = RoundedCornerShape(24.dp)
-            )
-            // Left accent glow strip
-            .drawBehind {
-                drawRect(
-                    brush = Brush.verticalGradient(
-                        listOf(accentColor.copy(alpha = 0.8f), Color.Transparent)
-                    ),
-                    topLeft = Offset(0f, size.height * 0.15f),
-                    size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height * 0.7f)
-                )
-            }
-    ) {
-        Column(modifier = Modifier.padding(20.dp), content = content)
-    }
-}
-
-// ─── Section Label ───────────────────────────────────────────────────────────
-
-@Composable
-private fun SectionLabel(
-    text: String,
-    icon: ImageVector,
-    tint: Color = MaterialTheme.colorScheme.secondary
-) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(tint.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(17.dp))
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = text,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.6.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-// ─── Stat Chip ───────────────────────────────────────────────────────────────
-
-@Composable
-private fun StatBlock(
-    label: String,
-    value: String,
-    valueColor: Color = MaterialTheme.colorScheme.onSurface
-) {
-    Column {
-        Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.8.sp)
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = valueColor)
-    }
-}
-
-// ─── Gradient Progress Bar ───────────────────────────────────────────────────
-
-@Composable
-private fun GradientProgress(
-    progress: Float,
-    brush: Brush? = null,
-    color: Color? = null,
-    height: Dp = 5.dp,
-    trackColor: Color = MaterialTheme.colorScheme.surfaceVariant
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    val finalBrush = brush ?: color?.let { SolidColor(it) } ?: Brush.horizontalGradient(
-        listOf(colorScheme.primary, colorScheme.secondary)
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(height)
+            .height(BarHeight)
             .clip(CircleShape)
-            .background(trackColor)
+            .background(cs.surfaceVariant)
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
+                .fillMaxWidth(progress.coerceIn(0f, 1f))
                 .fillMaxHeight()
                 .clip(CircleShape)
-                .background(finalBrush)
+                .background(color)
         )
     }
 }
 
-// ─── StatusCard ──────────────────────────────────────────────────────────────
+// ─── Key-value row ────────────────────────────────────────────────────────────
+
+@Composable
+private fun DataRow(
+    label: String,
+    value: String,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 7.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = value,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            color = valueColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End
+        )
+    }
+}
+
+private fun rowDivider(cs: ColorScheme) = Modifier
+    .fillMaxWidth()
+    .height(0.5.dp)
+    .background(cs.outlineVariant.copy(alpha = 0.3f))
+
+
+// ─── StatusCard ───────────────────────────────────────────────────────────────
 
 @Composable
 fun StatusCard(
-    health: VelaHealth,
-    isConnected: Boolean,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit
+    health: VelaHealth
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val connectedColor = if (isConnected) Color(0xFF4CAF50) else colorScheme.error
-
-    OrbitalCard(accentColor = connectedColor) {
-        Spacer(modifier = Modifier.height(20.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(Color.Transparent, colorScheme.outlineVariant, Color.Transparent)
-                    )
-                )
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text("SYSTEM UPTIME", fontSize = 10.sp, color = colorScheme.onSurfaceVariant, letterSpacing = 1.6.sp)
-        Spacer(modifier = Modifier.height(4.dp))
+    VelaCard {
+        VelaSectionHeader("System uptime")
+        Spacer(Modifier.height(6.dp))
         Text(
             text = formatUptime(health.uptimeSeconds),
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 34.sp,
+            fontWeight = FontWeight.Medium,
+            fontSize = 50.sp,
             fontFamily = FontFamily.Monospace,
-            color = colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
 
-// ─── NetworkCard ─────────────────────────────────────────────────────────────
+// ─── NetworkCard ──────────────────────────────────────────────────────────────
 
 @Composable
 fun NetworkCard(network: VelaNetworkInfo, wifi: VelaWifiStatus?) {
-    val colorScheme = MaterialTheme.colorScheme
-    val signalColor = when {
-        (wifi?.signal ?: 0) > 70 -> Color(0xFF4CAF50)
-        (wifi?.signal ?: 0) > 40 -> Color(0xFFFFB300)
-        else -> colorScheme.error
-    }
+    val cs = MaterialTheme.colorScheme
 
-    OrbitalCard(accentColor = colorScheme.secondary) {
-        SectionLabel("NETWORK & WIFI", Icons.Default.Wifi, colorScheme.secondary)
-        Spacer(modifier = Modifier.height(20.dp))
+    VelaCard {
+        VelaSectionHeader("Network")
+        Spacer(Modifier.height(SectionSpacing))
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            StatBlock("Interface", network.interfaceName.ifBlank { "—" })
-            StatBlock("Local IP", network.localIp, colorScheme.secondary)
+        DataRow("SSID", wifi?.ssid ?: "—")
+        Box(Modifier.then(rowDivider(cs)))
+        wifi?.signal?.let { sig ->
+            DataRow("Signal", "$sig%", valueColor = signalColor(sig, cs))
+            Box(Modifier.then(rowDivider(cs)))
         }
-
-        if (wifi != null && wifi.connected) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                StatBlock("SSID", wifi.ssid ?: "Unknown")
-                wifi.signal?.let { signal ->
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("Signal", fontSize = 10.sp, color = colorScheme.onSurfaceVariant, letterSpacing = 0.8.sp)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text("$signal%", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = signalColor)
-                    }
-                }
-            }
-            wifi.signal?.let { signal ->
-                Spacer(modifier = Modifier.height(8.dp))
-                GradientProgress(
-                    progress = signal / 100f,
-                    color = signalColor
-                )
-            }
+        if (network.interfaceName.isNotBlank()) {
+            DataRow("Interface", network.interfaceName)
+            Box(Modifier.then(rowDivider(cs)))
         }
+        DataRow("Local IP", network.localIp)
+        Box(Modifier.then(rowDivider(cs)))
+        DataRow("Public IP", network.publicIp, valueColor = cs.onSurfaceVariant)
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(colorScheme.secondary.copy(alpha = 0.06f))
-                .padding(horizontal = 14.dp, vertical = 10.dp)
-        ) {
-            Column {
-                Text("Public IP", fontSize = 10.sp, color = colorScheme.onSurfaceVariant, letterSpacing = 0.8.sp)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    network.publicIp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 15.sp,
-                    color = colorScheme.secondary
-                )
-            }
+        wifi?.signal?.let { sig ->
+            Spacer(Modifier.height(12.dp))
+            ThinBar(progress = sig / 100f, color = signalColor(sig, cs))
         }
     }
 }
 
-// ─── SystemResolutionCard ────────────────────────────────────────────────────
+// ─── SystemResolutionCard ─────────────────────────────────────────────────────
 
 @Composable
 fun SystemResolutionCard(resolution: VelaResolution?) {
     if (resolution == null) return
-    val colorScheme = MaterialTheme.colorScheme
+    val cs = MaterialTheme.colorScheme
 
-    OrbitalCard(accentColor = colorScheme.primary) {
-        SectionLabel("SYSTEM DISPLAY", Icons.Default.Monitor, colorScheme.primary)
-        Spacer(modifier = Modifier.height(20.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            StatBlock("Resolution", "${resolution.width}×${resolution.height}")
-            StatBlock("Refresh Rate", "${resolution.refresh} Hz", colorScheme.primary)
-        }
+    VelaCard {
+        VelaSectionHeader("Display")
+        Spacer(Modifier.height(SectionSpacing))
+        DataRow("Resolution", "${resolution.width}×${resolution.height}")
+        Box(Modifier.then(rowDivider(cs)))
+        DataRow("Refresh rate", "${resolution.refresh} Hz", valueColor = cs.primary)
         resolution.output?.let { output ->
-            Spacer(modifier = Modifier.height(14.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(colorScheme.primary)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Output: $output", fontSize = 12.sp, color = colorScheme.onSurfaceVariant)
-            }
+            Box(Modifier.then(rowDivider(cs)))
+            DataRow("Output", output)
         }
     }
 }
 
-// ─── ProcessSummaryCard ──────────────────────────────────────────────────────
+// ─── ResourceGauge (private) ──────────────────────────────────────────────────
+
+@Composable
+private fun ResourceGauge(
+    label: String,
+    value: Double,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .background(Color.Transparent)
+            .padding(12.dp)
+    ) {
+        Text(
+            label,
+            fontSize = 15.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            letterSpacing = 0.6.sp
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "${String.format("%.1f", value)}%",
+            fontWeight = FontWeight.Medium,
+            fontSize = 20.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(8.dp))
+        ThinBar(progress = (value / 100.0).toFloat(), color = color)
+    }
+}
+
+// ─── ProcessRow (private) ─────────────────────────────────────────────────────
+
+@Composable
+private fun ProcessRow(process: VelaProcess) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = process.name,
+            modifier = Modifier.weight(1f),
+            fontSize = 14.sp,
+            color = cs.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = String.format(Locale.ROOT, "%.2f%%", process.cpu),
+            modifier = Modifier.width(68.dp),
+            textAlign = TextAlign.End,
+            fontSize = 13.sp,
+            color = cs.primary,
+            maxLines = 1
+        )
+        Text(
+            text = String.format(Locale.ROOT, "%.2f%%", process.mem),
+            modifier = Modifier.width(68.dp),
+            textAlign = TextAlign.End,
+            fontSize = 13.sp,
+            color = cs.secondary,
+            maxLines = 1
+        )
+    }
+}
+
+// ─── ProcessSummaryCard ───────────────────────────────────────────────────────
 
 @Composable
 fun ProcessSummaryCard(
     processes: List<VelaProcess>,
     activeWindow: String?,
     currentLimit: Int,
+    cpuUsage: Double,
+    ramUsage: Double,
     onToggleLimit: () -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val totalCpu = processes.sumOf { it.cpu }
-    val totalMem = processes.sumOf { it.mem }
+    val cs = MaterialTheme.colorScheme
 
-    OrbitalCard(accentColor = colorScheme.tertiary) {
-        SectionLabel("HOST RESOURCES", Icons.Default.Memory, colorScheme.tertiary)
-        Spacer(modifier = Modifier.height(20.dp))
+    VelaCard {
+        VelaSectionHeader("Resources")
+        Spacer(Modifier.height(SectionSpacing))
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ResourceGauge(
-                label = "CPU",
-                value = totalCpu,
-                color = colorScheme.primary,
-                modifier = Modifier.weight(1f)
-            )
-            ResourceGauge(
-                label = "RAM",
-                value = totalMem,
-                color = colorScheme.secondary,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            ResourceGauge("CPU", cpuUsage, cs.primary, Modifier.weight(1f))
+            ResourceGauge("RAM", ramUsage, cs.secondary, Modifier.weight(1f))
+        }
+
+        Spacer(Modifier.height(SectionSpacing))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("TOP PROCESSES", fontSize = 10.sp, color = colorScheme.onSurfaceVariant, letterSpacing = 1.4.sp)
-            TextButton(
-                onClick = onToggleLimit,
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-            ) {
-                Text(
-                    text = if (currentLimit == 5) "Show More" else "Show Less",
-                    fontSize = 11.sp,
-                    color = colorScheme.secondary
-                )
-            }
+            Text(
+                "Process",
+                modifier = Modifier.weight(1f),
+                fontSize = 13.sp,
+                color = cs.onSurfaceVariant.copy(alpha = 0.5f),
+                letterSpacing = 0.4.sp
+            )
+            Text(
+                "CPU",
+                modifier = Modifier.width(68.dp),
+                textAlign = TextAlign.End,
+                fontSize = 13.sp,
+                color = cs.primary.copy(alpha = 0.6f),
+                letterSpacing = 0.4.sp
+            )
+            Text(
+                "MEM",
+                modifier = Modifier.width(68.dp),
+                textAlign = TextAlign.End,
+                fontSize = 13.sp,
+                color = cs.secondary.copy(alpha = 0.6f),
+                letterSpacing = 0.4.sp
+            )
         }
-        Spacer(modifier = Modifier.height(6.dp))
+
+        Box(Modifier.then(rowDivider(cs)))
+        Spacer(Modifier.height(4.dp))
 
         Box(modifier = Modifier.fillMaxWidth().animateContentSize()) {
             if (processes.isEmpty()) {
-                Box(modifier = Modifier.fillMaxWidth().height(60.dp), contentAlignment = Alignment.Center) {
-                    Text("No processes found", fontSize = 12.sp, color = colorScheme.onSurfaceVariant)
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No processes found",
+                        fontSize = 12.sp,
+                        color = cs.onSurfaceVariant
+                    )
                 }
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    processes.forEach { process ->
-                        ProcessRow(process)
-                    }
+                Column {
+                    processes.forEach { ProcessRow(it) }
                 }
             }
+        }
+
+        TextButton(
+            onClick = onToggleLimit,
+            contentPadding = PaddingValues(horizontal = 0.dp, vertical = 2.dp)
+        ) {
+            Text(
+                text = if (currentLimit == 5) "Show more" else "Show less",
+                fontSize = 11.sp,
+                color = cs.secondary
+            )
         }
 
         if (!activeWindow.isNullOrBlank()) {
-            Spacer(modifier = Modifier.height(14.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(colorScheme.tertiary.copy(alpha = 0.07f))
-                    .border(1.dp, colorScheme.tertiary.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                    .padding(12.dp)
-            ) {
-                Icon(Icons.Default.DesktopWindows, null, tint = colorScheme.tertiary, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(10.dp))
-                Column {
-                    Text("ACTIVE WINDOW", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = colorScheme.onSurfaceVariant, letterSpacing = 1.2.sp)
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(activeWindow, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
+            Spacer(Modifier.height(12.dp))
+            Box(Modifier.then(rowDivider(cs)))
+            DataRow("Active window", activeWindow, valueColor = cs.onSurfaceVariant)
         }
     }
 }
 
-@Composable
-private fun ResourceGauge(label: String, value: Double, color: Color, modifier: Modifier = Modifier) {
-    val colorScheme = MaterialTheme.colorScheme
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(color.copy(alpha = 0.06f))
-            .padding(14.dp)
-    ) {
-        Text(label, fontSize = 10.sp, color = colorScheme.onSurfaceVariant, letterSpacing = 1.2.sp)
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            "${String.format("%.1f", value)}%",
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 22.sp,
-            color = color
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        GradientProgress(
-            progress = (value / 100.0).toFloat(),
-            color = color,
-            height = 4.dp
-        )
-    }
-}
-
-@Composable
-private fun ProcessRow(process: VelaProcess) {
-    val colorScheme = MaterialTheme.colorScheme
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .padding(horizontal = 4.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(6.dp)
-                .clip(CircleShape)
-                .background(colorScheme.primary.copy(alpha = 0.6f))
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            process.name,
-            modifier = Modifier.weight(1f),
-            fontSize = 12.sp,
-            color = colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            "${process.cpu}%",
-            modifier = Modifier.width(44.dp),
-            textAlign = TextAlign.End,
-            fontSize = 11.sp,
-            color = colorScheme.primary,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            "${process.mem}%",
-            modifier = Modifier.width(44.dp),
-            textAlign = TextAlign.End,
-            fontSize = 11.sp,
-            color = colorScheme.secondary,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
-
-// ─── AudioControlCard ────────────────────────────────────────────────────────
+// ─── AudioControlCard ─────────────────────────────────────────────────────────
 
 @Composable
 fun AudioControlCard(
@@ -442,327 +394,226 @@ fun AudioControlCard(
     onVolumeChange: (Int) -> Unit,
     onMuteToggle: (Boolean) -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
+    val cs = MaterialTheme.colorScheme
     var sliderValue by remember(audioState.volume) { mutableFloatStateOf(audioState.volume.toFloat()) }
     val isMuted = audioState.muted
-    val accentColor = if (isMuted) colorScheme.error else Color(0xFF4CAF50)
 
-    OrbitalCard(accentColor = accentColor) {
-        SectionLabel("AUDIO VOLUME", Icons.Default.VolumeUp, accentColor)
-        Spacer(modifier = Modifier.height(20.dp))
+    VelaCard {
+        VelaSectionHeader("Audio")
+        Spacer(Modifier.height(SectionSpacing))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(accentColor.copy(alpha = 0.12f))
-                    .border(1.dp, accentColor.copy(alpha = 0.3f), CircleShape),
-                contentAlignment = Alignment.Center
+            IconButton(
+                onClick = { onMuteToggle(!isMuted) },
+                modifier = Modifier.size(36.dp)
             ) {
-                IconButton(onClick = { onMuteToggle(!isMuted) }, modifier = Modifier.size(44.dp)) {
-                    Icon(
-                        imageVector = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Slider(
-                    value = sliderValue,
-                    onValueChange = { sliderValue = it },
-                    onValueChangeFinished = { onVolumeChange(sliderValue.toInt()) },
-                    valueRange = 0f..100f,
-                    colors = SliderDefaults.colors(
-                        thumbColor = accentColor,
-                        activeTrackColor = accentColor,
-                        inactiveTrackColor = colorScheme.surfaceVariant
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                Icon(
+                    imageVector = if (isMuted)
+                        Icons.AutoMirrored.Filled.VolumeOff
+                    else
+                        Icons.AutoMirrored.Filled.VolumeUp,
+                    contentDescription = if (isMuted) "Unmute" else "Mute",
+                    tint = cs.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(Modifier.width(4.dp))
+            Slider(
+                value = sliderValue,
+                onValueChange = { sliderValue = it },
+                onValueChangeFinished = { onVolumeChange(sliderValue.toInt()) },
+                valueRange = 0f..100f,
+                colors = SliderDefaults.colors(
+                    thumbColor = cs.primary,
+                    activeTrackColor = cs.primary,
+                    inactiveTrackColor = cs.surfaceVariant
+                ),
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(8.dp))
             Text(
-                "${sliderValue.toInt()}%",
-                modifier = Modifier.width(40.dp),
-                textAlign = TextAlign.End,
+                text = "${sliderValue.toInt()}%",
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = if (isMuted) colorScheme.error else colorScheme.onSurface
+                color = cs.onSurface,
+                modifier = Modifier.width(36.dp),
+                textAlign = TextAlign.End
             )
         }
     }
 }
 
-// ─── BrightnessControlCard ───────────────────────────────────────────────────
+// ─── BrightnessControlCard ──────────────────────────────────────────────────
 
 @Composable
 fun BrightnessControlCard(
     brightness: Int,
     onBrightnessChange: (Int) -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val accentColor = Color(0xFFFFB300)
+    val cs = MaterialTheme.colorScheme
     var sliderValue by remember(brightness) { mutableFloatStateOf(brightness.toFloat()) }
 
-    OrbitalCard(accentColor = accentColor) {
-        SectionLabel("DISPLAY BRIGHTNESS", Icons.Default.LightMode, accentColor)
-        Spacer(modifier = Modifier.height(20.dp))
+    VelaCard {
+        VelaSectionHeader("Brightness")
+        Spacer(Modifier.height(SectionSpacing))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.LightMode, null, tint = accentColor, modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Slider(
-                    value = sliderValue,
-                    onValueChange = { sliderValue = it },
-                    onValueChangeFinished = { onBrightnessChange(sliderValue.toInt()) },
-                    valueRange = 0f..100f,
-                    colors = SliderDefaults.colors(
-                        thumbColor = accentColor,
-                        activeTrackColor = accentColor,
-                        inactiveTrackColor = colorScheme.surfaceVariant
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.Default.LightMode,
+                contentDescription = null,
+                tint = cs.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Slider(
+                value = sliderValue,
+                onValueChange = { sliderValue = it },
+                onValueChangeFinished = { onBrightnessChange(sliderValue.toInt()) },
+                valueRange = 0f..100f,
+                colors = SliderDefaults.colors(
+                    thumbColor = Color(0xFFFFB300),
+                    activeTrackColor = Color(0xFFFFB300),
+                    inactiveTrackColor = cs.surfaceVariant
+                ),
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(8.dp))
             Text(
-                "${sliderValue.toInt()}%",
-                modifier = Modifier.width(40.dp),
-                textAlign = TextAlign.End,
+                text = "${sliderValue.toInt()}%",
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = accentColor
+                color = cs.onSurface,
+                modifier = Modifier.width(36.dp),
+                textAlign = TextAlign.End
             )
         }
     }
 }
 
-// ─── DiskUsageCard ───────────────────────────────────────────────────────────
+// ─── DiskUsageCard ────────────────────────────────────────────────────────────
 
 @Composable
 fun DiskUsageCard(disks: List<VelaDiskUsage>) {
-    val colorScheme = MaterialTheme.colorScheme
-    OrbitalCard(accentColor = colorScheme.primary) {
-        SectionLabel("DISK STATUS", Icons.Default.Dns, colorScheme.primary)
-        Spacer(modifier = Modifier.height(20.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            disks.forEach { disk ->
-                val usedPercent = disk.percent
-                val diskColor = when {
-                    usedPercent > 85 -> colorScheme.error
-                    usedPercent > 60 -> Color(0xFFFFB300)
-                    else -> colorScheme.primary
-                }
-                Column {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+    val cs = MaterialTheme.colorScheme
+
+    VelaCard {
+        VelaSectionHeader("Storage")
+        Spacer(Modifier.height(SectionSpacing))
+
+        disks.forEachIndexed { index, disk ->
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Column {
                         Text(
-                            disk.mountpoint,
+                            text = disk.mountpoint,
                             fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = colorScheme.onSurface,
-                            fontFamily = FontFamily.Monospace
+                            fontWeight = FontWeight.Medium,
+                            color = cs.onSurface
                         )
                         Text(
-                            "${String.format("%.1f", usedPercent)}% used",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = diskColor
+                            text = "${disk.used} / ${disk.total}",
+                            fontSize = 11.sp,
+                            color = cs.onSurfaceVariant
                         )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    GradientProgress(
-                        progress = (usedPercent / 100.0).toFloat(),
-                        color = diskColor,
-                        height = 6.dp
+                    Text(
+                        text = "${String.format("%.1f", disk.percent)}%",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = diskColor(disk.percent, cs)
                     )
+                }
+                Spacer(Modifier.height(8.dp))
+                ThinBar(
+                    progress = (disk.percent / 100.0).toFloat(),
+                    color = diskColor(disk.percent, cs)
+                )
+
+                if (index < disks.size - 1) {
+                    Spacer(Modifier.height(16.dp))
                 }
             }
         }
     }
 }
 
-// ─── MediaBar ────────────────────────────────────────────────────────────────
+// ─── MediaBar ─────────────────────────────────────────────────────────────────
 
 @Composable
 fun MediaBar(
     media: VelaMediaState,
     onTogglePlayPause: () -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val isPlaying = media.status == "playing"
+    val cs = MaterialTheme.colorScheme
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(colorScheme.surfaceContainer)
-            .border(
-                1.dp,
-                Brush.horizontalGradient(listOf(colorScheme.primary.copy(0.4f), colorScheme.secondary.copy(0.4f))),
-                RoundedCornerShape(24.dp)
-            )
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Album art placeholder
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            Brush.linearGradient(
-                                listOf(colorScheme.primary.copy(0.3f), colorScheme.secondary.copy(0.2f))
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.MusicNote else Icons.Default.MusicOff,
-                        contentDescription = null,
-                        tint = if (isPlaying) colorScheme.secondary else colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        media.title ?: "No Media Track",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(3.dp))
-                    Text(
-                        media.artist ?: "Unknown Artist",
-                        fontSize = 12.sp,
-                        color = colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                listOf(colorScheme.secondary.copy(0.25f), Color.Transparent)
-                            )
-                        )
-                        .border(1.dp, colorScheme.secondary.copy(0.3f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    IconButton(onClick = onTogglePlayPause, modifier = Modifier.size(44.dp)) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Default.PauseCircleFilled else Icons.Default.PlayCircleFilled,
-                            contentDescription = null,
-                            tint = colorScheme.secondary,
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
-                }
-            }
-
-            if (media.positionSeconds != null && media.lengthSeconds != null) {
-                Spacer(modifier = Modifier.height(14.dp))
-                val progress = (media.positionSeconds / media.lengthSeconds.coerceAtLeast(1.0)).coerceIn(0.0, 1.0).toFloat()
-                GradientProgress(progress = progress, height = 3.dp, trackColor = colorScheme.surfaceVariant)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(formatDuration(media.positionSeconds.toLong()), fontSize = 10.sp, color = colorScheme.onSurfaceVariant)
-                    Text(formatDuration(media.lengthSeconds.toLong()), fontSize = 10.sp, color = colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
-}
-
-private fun formatDuration(secs: Long): String {
-    val m = secs / 60; val s = secs % 60
-    return "${m}:${s.toString().padStart(2, '0')}"
-}
-
-// ─── ClipboardCard ───────────────────────────────────────────────────────────
-
-@Composable
-fun ClipboardCard(
-    currentText: String,
-    onWriteText: (String) -> Unit
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    var input by remember { mutableStateOf("") }
-
-    OrbitalCard(accentColor = colorScheme.secondary) {
-        SectionLabel("CLIPBOARD", Icons.Default.ContentPaste, colorScheme.secondary)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Current clipboard content preview
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(colorScheme.surface)
-                .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-                .padding(14.dp)
+    VelaCard {
+        VelaSectionHeader("Current Song")
+        Spacer(Modifier.height(SectionSpacing))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (currentText.isBlank()) {
-                Text("Clipboard is empty", fontSize = 12.sp, color = colorScheme.onSurfaceVariant, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
-            } else {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(cs.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!media.artUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = media.artUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.MusicNote,
+                        contentDescription = null,
+                        tint = cs.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                media.title?.ifBlank { "Nothing playing" }?.let {
+                    Text(
+                        text = it,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = cs.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Text(
-                    currentText,
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace,
-                    color = colorScheme.onSurface,
-                    maxLines = 3,
+                    text = media.artist?.ifBlank { "—" } ?: "-",
+                    fontSize = 11.sp,
+                    color = cs.onSurfaceVariant,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.height(14.dp))
-
-        OutlinedTextField(
-            value = input,
-            onValueChange = { input = it },
-            placeholder = { Text("Write to clipboard...", fontSize = 13.sp, color = colorScheme.onSurfaceVariant) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = colorScheme.secondary,
-                unfocusedBorderColor = colorScheme.outlineVariant,
-                cursorColor = colorScheme.secondary,
-                focusedTextColor = colorScheme.onSurface,
-                unfocusedTextColor = colorScheme.onSurface
-            ),
-            minLines = 2
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Button(
-            onClick = { onWriteText(input); input = "" },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colorScheme.primary
-            ),
-            contentPadding = PaddingValues(0.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(16.dp), tint = colorScheme.onPrimary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Dispatch to Host", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = colorScheme.onPrimary)
+            IconButton(onClick = onTogglePlayPause) {
+                Icon(
+                    imageVector = if (media.status == "Playing") Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = cs.primary
+                )
             }
         }
     }
 }
 
-// ─── ScreenshotSheet ─────────────────────────────────────────────────────────
+
+
+// ─── ScreenshotSheet ──────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -770,53 +621,50 @@ fun ScreenshotSheet(
     bitmap: Bitmap,
     onDismiss: () -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = colorScheme.surfaceContainerHigh,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 40.dp),
+                .padding(16.dp)
+                .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "Current Screenshot",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = colorScheme.onSurface
+                "Remote Screenshot",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
             Image(
                 bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Current Screenshot",
+                contentDescription = "Device Screenshot",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.FillWidth
             )
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
+            Spacer(Modifier.height(24.dp))
+            OutlinedButton(
                 onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Close", fontWeight = FontWeight.Bold, color = colorScheme.onPrimary)
+                Text("Close Preview")
             }
         }
     }
 }
 
-// ─── Utility ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-fun formatUptime(totalSecs: Long): String {
-    val hrs = totalSecs / 3600
-    val mins = (totalSecs % 3600) / 60
-    val secs = totalSecs % 60
-    val days = hrs / 24
-    return if (days > 0) "${days}d ${hrs % 24}h ${mins}m ${secs}s" else "${hrs}h ${mins}m ${secs}s"
+private fun formatUptime(seconds: Long): String {
+    val hrs = seconds / 3600
+    val mins = (seconds % 3600) / 60
+    val secs = seconds % 60
+    return String.format(Locale.ROOT, "%02d:%02d:%02d", hrs, mins, secs)
 }

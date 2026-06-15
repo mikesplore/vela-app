@@ -29,9 +29,11 @@ import com.template.app.core.data.local.entities.*
         VelaNotificationEntity::class,
         VelaWifiEntity::class,
         VelaBrightnessEntity::class,
-        VelaResolutionEntity::class
+        VelaResolutionEntity::class,
+        VelaCpuUsageEntity::class,
+        VelaRamUsageEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

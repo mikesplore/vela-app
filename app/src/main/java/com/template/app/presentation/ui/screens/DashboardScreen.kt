@@ -38,9 +38,7 @@ private val TextMuted    = Color(0xFF8B95A8)
 private val CardBorder   = Color(0xFF1E2533)
 
 private val GradientAccent = Brush.horizontalGradient(listOf(AccentIndigo, AccentCyan))
-private val GradientBg     = Brush.verticalGradient(
-    listOf(Color(0xFF0D1020), BgDeep, BgMid)
-)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,14 +77,6 @@ fun DashboardScreen(
                             letterSpacing = 3.sp,
                             fontSize = 18.sp,
                             color = TextPrimary
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "DASHBOARD",
-                            fontWeight = FontWeight.Light,
-                            letterSpacing = 3.sp,
-                            fontSize = 18.sp,
-                            color = TextMuted
                         )
                     }
                 },
@@ -129,7 +119,7 @@ fun DashboardScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(GradientBg)
+                .background(BgDeep)
                 .padding(padding)
         ) {
             // Ambient glow orbs in background
@@ -176,10 +166,7 @@ fun DashboardScreen(
                         enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 4 }
                     ) {
                         StatusCard(
-                            health = health,
-                            isConnected = state.isConnected,
-                            isRefreshing = state.isRefreshing,
-                            onRefresh = { viewModel.refreshAllData() }
+                            health = health
                         )
                     }
                 }
@@ -211,6 +198,8 @@ fun DashboardScreen(
                             processes = state.processes,
                             activeWindow = state.activeWindow,
                             currentLimit = state.processLimit,
+                            cpuUsage = state.cpuUsage,
+                            ramUsage = state.ramUsage,
                             onToggleLimit = { viewModel.toggleProcessLimit() }
                         )
                     }
@@ -262,16 +251,6 @@ fun DashboardScreen(
                     }
                 }
 
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(tween(450, delayMillis = 480)) + slideInVertically(tween(450, delayMillis = 480)) { it / 4 }
-                ) {
-                    ClipboardCard(
-                        currentText = state.clipboardText,
-                        onWriteText = { viewModel.writeClipboard(it) }
-                    )
-                }
-
                 Spacer(modifier = Modifier.height(96.dp))
             }
 
@@ -315,6 +294,9 @@ fun DashboardFabMenu(
     onLock: () -> Unit,
     onPlayPause: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+    val gradient = Brush.horizontalGradient(listOf(colorScheme.primary, colorScheme.secondary))
+
     Column(
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -339,7 +321,7 @@ fun DashboardFabMenu(
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(GradientAccent),
+                .background(gradient),
             contentAlignment = Alignment.Center
         ) {
             FloatingActionButton(
@@ -360,7 +342,7 @@ fun DashboardFabMenu(
                     Icon(
                         imageVector = if (expanded) Icons.Default.Close else Icons.Default.GridView,
                         contentDescription = "Menu",
-                        tint = Color.White
+                        tint = colorScheme.onPrimary
                     )
                 }
             }
@@ -370,13 +352,14 @@ fun DashboardFabMenu(
 
 @Composable
 fun OrbitalFabItem(onClick: () -> Unit, icon: ImageVector, label: String) {
+    val colorScheme = MaterialTheme.colorScheme
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.End
     ) {
         Surface(
             shape = RoundedCornerShape(8.dp),
-            color = BgMid,
+            color = colorScheme.surfaceVariant,
             tonalElevation = 0.dp,
             shadowElevation = 4.dp,
             modifier = Modifier.padding(end = 8.dp)
@@ -385,7 +368,7 @@ fun OrbitalFabItem(onClick: () -> Unit, icon: ImageVector, label: String) {
                 label,
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                 fontSize = 12.sp,
-                color = TextPrimary,
+                color = colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -393,10 +376,10 @@ fun OrbitalFabItem(onClick: () -> Unit, icon: ImageVector, label: String) {
             onClick = onClick,
             modifier = Modifier.size(44.dp),
             shape = CircleShape,
-            containerColor = Color(0xFF141824),
+            containerColor = colorScheme.secondaryContainer,
             elevation = FloatingActionButtonDefaults.elevation(2.dp)
         ) {
-            Icon(icon, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(18.dp))
+            Icon(icon, contentDescription = null, tint = colorScheme.onSecondaryContainer, modifier = Modifier.size(18.dp))
         }
     }
 }

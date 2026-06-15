@@ -54,9 +54,10 @@ data class VelaMediaEntity(
     val album: String?,
     val status: String?,
     val positionSeconds: Double?,
-    val lengthSeconds: Double?
+    val lengthSeconds: Double?,
+    val artUrl: String? = null
 ) {
-    fun toDomain() = VelaMediaState(title, artist, album, status, positionSeconds, lengthSeconds)
+    fun toDomain() = VelaMediaState(title, artist, album, status, positionSeconds, lengthSeconds, artUrl)
     companion object {
         fun fromDomain(domain: VelaMediaState) = VelaMediaEntity(
             id = 0,
@@ -65,7 +66,8 @@ data class VelaMediaEntity(
             album = domain.album,
             status = domain.status,
             positionSeconds = domain.positionSeconds,
-            lengthSeconds = domain.lengthSeconds
+            lengthSeconds = domain.lengthSeconds,
+            artUrl = domain.artUrl
         )
     }
 }
@@ -96,13 +98,13 @@ data class VelaDiskEntity(
     val free: Long,
     val percent: Double
 ) {
-    fun toDomain() = VelaDiskUsage(mountpoint, total, used, free, percent)
+    fun toDomain() = VelaDiskUsage(mountpoint, total.toString(), used.toString(), free.toString(), percent)
     companion object {
         fun fromDomain(domain: VelaDiskUsage) = VelaDiskEntity(
             mountpoint = domain.mountpoint,
-            total = domain.total,
-            used = domain.used,
-            free = domain.free,
+            total = domain.total.toLong(),
+            used = domain.used.toLong(),
+            free = domain.free.toLong(),
             percent = domain.percent
         )
     }
@@ -174,5 +176,27 @@ data class VelaResolutionEntity(
             refresh = domain.refresh,
             output = domain.output
         )
+    }
+}
+
+@Entity(tableName = "vela_cpu_usage")
+data class VelaCpuUsageEntity(
+    @PrimaryKey val id: Int = 0,
+    val overall: Double
+) {
+    fun toDomain() = VelaCpuUsage(overall)
+    companion object {
+        fun fromDomain(domain: VelaCpuUsage) = VelaCpuUsageEntity(id = 0, overall = domain.overall)
+    }
+}
+
+@Entity(tableName = "vela_ram_usage")
+data class VelaRamUsageEntity(
+    @PrimaryKey val id: Int = 0,
+    val percent: Double
+) {
+    fun toDomain() = VelaRamUsage(percent)
+    companion object {
+        fun fromDomain(domain: VelaRamUsage) = VelaRamUsageEntity(id = 0, percent = domain.percent)
     }
 }

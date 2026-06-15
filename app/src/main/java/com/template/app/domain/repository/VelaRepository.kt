@@ -16,6 +16,8 @@ interface VelaRepository {
     fun observeWifi(): Flow<VelaWifiStatus?>
     fun observeBrightness(): Flow<VelaBrightness?>
     fun observeResolution(): Flow<VelaResolution?>
+    fun observeCpuUsage(): Flow<VelaCpuUsage?>
+    fun observeRamUsage(): Flow<VelaRamUsage?>
 
     // General
     suspend fun getHealth(): Resource<VelaHealth>
@@ -57,4 +59,8 @@ interface VelaRepository {
     // Processes
     suspend fun getProcesses(): Resource<List<VelaProcess>>
     suspend fun getActiveWindow(): Resource<String>
+
+    // Monitor
+    suspend fun getCpuUsage(): Resource<VelaCpuUsage>
+    suspend fun getRamUsage(): Resource<VelaRamUsage>
 }
