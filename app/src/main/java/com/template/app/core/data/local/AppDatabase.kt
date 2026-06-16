@@ -23,6 +23,7 @@ import com.template.app.core.data.local.entities.*
         VelaHealthEntity::class,
         VelaNetworkEntity::class,
         VelaAudioEntity::class,
+        VelaAudioDeviceEntity::class,
         VelaMediaEntity::class,
         VelaProcessEntity::class,
         VelaDiskEntity::class,
@@ -33,9 +34,10 @@ import com.template.app.core.data.local.entities.*
         VelaCpuUsageEntity::class,
         VelaRamUsageEntity::class,
         VelaClipboardEntity::class,
-        VelaActiveWindowEntity::class
+        VelaActiveWindowEntity::class,
+        VelaScheduledTaskEntity::class
     ],
-    version = 6,
+    version = 11,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

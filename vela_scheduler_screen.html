@@ -1,0 +1,128 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; }
+  .shell {
+    width: 100%; max-width: 390px; margin: 0 auto;
+    background: #0f0f0f; min-height: 780px;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    border-radius: 20px; overflow: hidden;
+  }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 16px; border-bottom: 0.5px solid rgba(255,255,255,0.07); }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar i { font-size: 18px; color: rgba(255,255,255,0.6); }
+  .topbar span { font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.9); }
+  .add-btn { width: 32px; height: 32px; border-radius: 50%; background: rgba(124,111,205,0.15); display: flex; align-items: center; justify-content: center; }
+  .add-btn i { font-size: 16px; color: #9d92d8; }
+
+  .section { padding: 20px 20px 0; }
+  .section-label { font-size: 11px; color: rgba(255,255,255,0.3); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 14px; }
+  .divider { height: 0.5px; background: rgba(255,255,255,0.07); margin-top: 20px; }
+
+  .task-card { background: rgba(255,255,255,0.04); border: 0.5px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+  .task-card:last-child { margin-bottom: 0; }
+  .task-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .task-cmd { font-size: 13px; color: rgba(255,255,255,0.85); font-weight: 500; font-family: monospace; }
+  .recur-badge { font-size: 10px; color: #9d92d8; background: rgba(124,111,205,0.12); border-radius: 6px; padding: 2px 7px; flex-shrink: 0; margin-left: 8px; white-space: nowrap; }
+  .task-time { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+  .task-time i { font-size: 12px; color: rgba(255,255,255,0.3); }
+  .task-time span { font-size: 12px; color: rgba(255,255,255,0.4); }
+  .task-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .task-btn { flex: 1; padding: 8px; border-radius: 8px; text-align: center; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 5px; }
+  .task-btn i { font-size: 12px; }
+  .task-btn.run { background: rgba(124,111,205,0.12); border: 0.5px solid rgba(124,111,205,0.25); color: #9d92d8; }
+  .task-btn.cancel { background: rgba(224,82,79,0.1); border: 0.5px solid rgba(224,82,79,0.22); color: #e0807d; }
+
+  .form-card { background: rgba(255,255,255,0.04); border: 0.5px solid rgba(124,111,205,0.25); border-radius: 14px; padding: 16px; }
+  .form-title { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.85); margin-bottom: 14px; }
+  .field { margin-bottom: 12px; }
+  .field-label { font-size: 11px; color: rgba(255,255,255,0.35); margin-bottom: 6px; }
+  .field-input { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); border: 0.5px solid rgba(255,255,255,0.1); border-radius: 9px; padding: 10px 12px; }
+  .field-input input { flex: 1; background: none; border: none; outline: none; color: rgba(255,255,255,0.8); font-size: 13px; font-family: monospace; }
+  .field-input input::placeholder { color: rgba(255,255,255,0.25); }
+  .field-input i { font-size: 13px; color: rgba(255,255,255,0.3); }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .toggle-label { font-size: 12px; color: rgba(255,255,255,0.6); }
+  .switch { width: 36px; height: 22px; border-radius: 11px; background: rgba(255,255,255,0.12); position: relative; }
+  .switch.on { background: #7c6fcd; }
+  .switch-knob { width: 16px; height: 16px; border-radius: 50%; background: #fff; position: absolute; top: 3px; left: 3px; }
+  .switch.on .switch-knob { left: auto; right: 3px; }
+
+  .create-btn { width: 100%; background: #7c6fcd; color: #fff; padding: 11px; border-radius: 9px; text-align: center; font-size: 13px; font-weight: 500; }
+
+  .bottom-pad { height: 24px; }
+</style>
+
+<div class="shell">
+  <div class="topbar">
+    <div class="topbar-left">
+      <i class="ti ti-arrow-left" aria-hidden="true"></i>
+      <span>Scheduler</span>
+    </div>
+    <div class="add-btn"><i class="ti ti-plus" aria-hidden="true"></i></div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Scheduled tasks</div>
+
+    <div class="task-card">
+      <div class="task-top">
+        <span class="task-cmd">sync-time</span>
+        <span class="recur-badge">Daily</span>
+      </div>
+      <div class="task-time"><i class="ti ti-clock" aria-hidden="true"></i><span>Next run: Today, 03:00</span></div>
+      <div class="task-actions">
+        <div class="task-btn run"><i class="ti ti-player-play" aria-hidden="true"></i>Run now</div>
+        <div class="task-btn cancel"><i class="ti ti-x" aria-hidden="true"></i>Cancel</div>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <div class="task-top">
+        <span class="task-cmd">clear-cache --temp</span>
+      </div>
+      <div class="task-time"><i class="ti ti-clock" aria-hidden="true"></i><span>Next run: Jun 18, 09:00</span></div>
+      <div class="task-actions">
+        <div class="task-btn run"><i class="ti ti-player-play" aria-hidden="true"></i>Run now</div>
+        <div class="task-btn cancel"><i class="ti ti-x" aria-hidden="true"></i>Cancel</div>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <div class="task-top">
+        <span class="task-cmd">backup.sh /data</span>
+        <span class="recur-badge">Weekly</span>
+      </div>
+      <div class="task-time"><i class="ti ti-clock" aria-hidden="true"></i><span>Next run: Jun 21, 23:30</span></div>
+      <div class="task-actions">
+        <div class="task-btn run"><i class="ti ti-player-play" aria-hidden="true"></i>Run now</div>
+        <div class="task-btn cancel"><i class="ti ti-x" aria-hidden="true"></i>Cancel</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">Create task</div>
+    <div class="form-card">
+      <div class="form-title">New scheduled task</div>
+      <div class="field">
+        <div class="field-label">Command</div>
+        <div class="field-input"><i class="ti ti-terminal-2" aria-hidden="true"></i><input placeholder="e.g. backup.sh /data" /></div>
+      </div>
+      <div class="field">
+        <div class="field-label">Run at</div>
+        <div class="field-input"><i class="ti ti-calendar-time" aria-hidden="true"></i><input placeholder="Jun 20, 2026 — 14:00" /></div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Recurring task</span>
+        <div class="switch on"><div class="switch-knob"></div></div>
+      </div>
+      <div class="create-btn">Create task</div>
+    </div>
+  </div>
+
+  <div class="bottom-pad"></div>
+</div>

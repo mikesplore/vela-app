@@ -21,7 +21,7 @@ interface VelaApiService {
 
     // ── Display ───────────────────────────────────────────────────────────────
 
-    @GET("display/screenshot")
+    @GET("display/screenshott")
     suspend fun getScreenshot(): ScreenshotResponse
 
     @POST("display/record")
@@ -318,7 +318,7 @@ interface VelaApiService {
     suspend fun createScheduledTask(@Body body: SchedulerCreateRequest): ScheduledTask
 
     @GET("scheduler/list")
-    suspend fun listScheduledTasks(): List<ScheduledTask>
+    suspend fun listScheduledTasks(): SchedulerListResponse
 
     @DELETE("scheduler/cancel/{task_id}")
     suspend fun cancelScheduledTask(@Path("task_id") taskId: String): GenericResponse

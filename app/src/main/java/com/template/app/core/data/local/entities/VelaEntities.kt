@@ -38,11 +38,42 @@ data class VelaNetworkEntity(
 data class VelaAudioEntity(
     @PrimaryKey val id: Int = 0,
     val volume: Int,
-    val muted: Boolean
+    val muted: Boolean,
+    val micMuted: Boolean = false,
+    val activeDeviceId: String? = null
 ) {
-    fun toDomain() = VelaAudioState(volume, muted)
+    fun toDomain() = VelaAudioState(
+        volume = volume, 
+        muted = muted, 
+        micMuted = micMuted,
+        activeDeviceId = activeDeviceId
+    )
     companion object {
-        fun fromDomain(domain: VelaAudioState) = VelaAudioEntity(id = 0, volume = domain.volume, muted = domain.muted)
+        fun fromDomain(domain: VelaAudioState) = VelaAudioEntity(
+            id = 0, 
+            volume = domain.volume, 
+            muted = domain.muted,
+            micMuted = domain.micMuted,
+            activeDeviceId = domain.activeDeviceId
+        )
+    }
+}
+
+@Entity(tableName = "vela_audio_devices")
+data class VelaAudioDeviceEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val type: String,
+    val isActive: Boolean
+) {
+    fun toDomain() = VelaAudioDevice(id, name, type, isActive)
+    companion object {
+        fun fromDomain(domain: VelaAudioDevice) = VelaAudioDeviceEntity(
+            id = domain.id,
+            name = domain.name,
+            type = domain.type,
+            isActive = domain.isActive
+        )
     }
 }
 
@@ -165,16 +196,22 @@ data class VelaResolutionEntity(
     val width: Int,
     val height: Int,
     val refresh: Double,
-    val output: String?
+    val output: String?,
+    val rotation: String,
+    val nightLightEnabled: Boolean,
+    val nightLightTemp: Int
 ) {
-    fun toDomain() = VelaResolution(width, height, refresh, output)
+    fun toDomain() = VelaResolution(width, height, refresh, output, rotation, nightLightEnabled, nightLightTemp)
     companion object {
         fun fromDomain(domain: VelaResolution) = VelaResolutionEntity(
             id = 0,
             width = domain.width,
             height = domain.height,
             refresh = domain.refresh,
-            output = domain.output
+            output = domain.output,
+            rotation = domain.rotation,
+            nightLightEnabled = domain.nightLightEnabled,
+            nightLightTemp = domain.nightLightTemp
         )
     }
 }

@@ -1,42 +1,71 @@
 package com.template.app.presentation.ui.screens
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.template.app.presentation.ui.components.DashboardFabMenu
 import com.template.app.presentation.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun DashboardScreen(
     onLogout: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var isFabMenuExpanded by remember { mutableStateOf(false) }
     val colorScheme = MaterialTheme.colorScheme
+    var isFabMenuExpanded by remember { mutableStateOf(false) }
 
+    DisposableEffect(Unit) {
+        viewModel.setFabVisible(true)
+        onDispose {
+            viewModel.setFabVisible(false)
+        }
+    }
 
+    Scaffold(
+        floatingActionButton = {
+            DashboardFabMenu(
+                isExpanded = isFabMenuExpanded,
+                onToggle = { isFabMenuExpanded = !isFabMenuExpanded },
+                onScreenshot = { viewModel.takeScreenshot(); },
+                onLock = { viewModel.lockScreen(); },
+                onPlayPause = { viewModel.togglePlayPause(); }
+            )
+        }
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -172,7 +201,8 @@ fun DashboardScreen(
         }
 
         Spacer(modifier = Modifier.height(96.dp))
-    }
+
+    }}
 
     // Full-screen loading state
     if (state.isRefreshing && state.health == null) {
@@ -194,155 +224,10 @@ fun DashboardScreen(
         }
     }
 
-
-
     state.screenshot?.let { bitmap ->
         ScreenshotSheet(
             bitmap = bitmap,
             onDismiss = { viewModel.dismissScreenshot() }
         )
-    }
-}
-
-// ─── FAB Menu ────────────────────────────────────────────────────────────────
-
-@Composable
-fun DashboardFabMenu(
-    isExpanded: Boolean,
-    onToggle: () -> Unit,
-    onScreenshot: () -> Unit,
-    onLock: () -> Unit,
-    onPlayPause: () -> Unit
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    val gradient = Brush.horizontalGradient(listOf(colorScheme.primary, colorScheme.secondary))
-
-    Column(
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        AnimatedVisibility(
-            visible = isExpanded,
-            enter = fadeIn(tween(220)) + expandVertically(
-                tween(220),
-                expandFrom = Alignment.Bottom
-            ),
-            exit = fadeOut(tween(180)) + shrinkVertically(
-                tween(180),
-                shrinkTowards = Alignment.Bottom
-            )
-        ) {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OrbitalFabItem(
-                    onClick = onScreenshot,
-                    icon = Icons.Default.PhotoCamera,
-                    label = "Screenshot"
-                )
-                OrbitalFabItem(onClick = onLock, icon = Icons.Default.Lock, label = "Lock Screen")
-                OrbitalFabItem(
-                    onClick = onPlayPause,
-                    icon = Icons.Default.PlayArrow,
-                    label = "Play / Pause"
-                )
-            }
-        }
-
-        // Main FAB with gradient
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(gradient),
-            contentAlignment = Alignment.Center
-        ) {
-            FloatingActionButton(
-                onClick = onToggle,
-                containerColor = Color.Transparent,
-                elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp),
-                modifier = Modifier.size(56.dp)
-            ) {
-                AnimatedContent(
-                    targetState = isExpanded,
-                    transitionSpec = {
-                        (fadeIn(tween(180)) + scaleIn(tween(180))).togetherWith(
-                            fadeOut(tween(120)) + scaleOut(tween(120))
-                        )
-                    },
-                    label = "fab_icon"
-                ) { expanded ->
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.Close else Icons.Default.GridView,
-                        contentDescription = "Menu",
-                        tint = colorScheme.onPrimary
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun OrbitalFabItem(onClick: () -> Unit, icon: ImageVector, label: String) {
-    val colorScheme = MaterialTheme.colorScheme
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.End
-    ) {
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = colorScheme.surfaceVariant,
-            tonalElevation = 0.dp,
-            shadowElevation = 4.dp,
-            modifier = Modifier.padding(end = 8.dp)
-        ) {
-            Text(
-                label,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                fontSize = 12.sp,
-                color = colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium
-            )
-        }
-        FloatingActionButton(
-            onClick = onClick,
-            modifier = Modifier.size(44.dp),
-            shape = CircleShape,
-            containerColor = colorScheme.secondaryContainer,
-            elevation = FloatingActionButtonDefaults.elevation(2.dp)
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-    }
-}
-
-// ─── Error Message ───────────────────────────────────────────────────────────
-
-@Composable
-fun ErrorMessage(msg: String) {
-    val colorScheme = MaterialTheme.colorScheme
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(colorScheme.error.copy(alpha = 0.10f))
-            .padding(14.dp)
-    ) {
-        Icon(
-            Icons.Default.ErrorOutline,
-            null,
-            tint = colorScheme.error,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(msg, color = colorScheme.error, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }

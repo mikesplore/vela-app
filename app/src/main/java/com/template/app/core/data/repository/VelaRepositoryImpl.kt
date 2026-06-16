@@ -11,6 +11,7 @@ import com.template.app.core.utils.safeApiCall
 import com.template.app.domain.model.*
 import com.template.app.domain.repository.VelaRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -28,6 +29,9 @@ class VelaRepositoryImpl @Inject constructor(
 
     override fun observeAudio(): Flow<VelaAudioState?> =
         velaDao.observeAudio().map { it?.toDomain() }
+
+    override fun observeAudioDevices(): Flow<List<VelaAudioDevice>> =
+        velaDao.observeAudioDevices().map { list -> list.map { it.toDomain() } }
 
     override fun observeMedia(): Flow<VelaMediaState?> =
         velaDao.observeMedia().map { it?.toDomain() }
@@ -62,6 +66,9 @@ class VelaRepositoryImpl @Inject constructor(
     override fun observeActiveWindow(): Flow<String?> =
         velaDao.observeActiveWindow().map { it?.title }
 
+    override fun observeScheduledTasks(): Flow<List<VelaScheduledTask>> =
+        velaDao.observeScheduledTasks().map { list -> list.map { it.toDomain() } }
+
     // --- Actions & Refreshing ---
 
     override suspend fun getHealth(): Resource<VelaHealth> = safeApiCall {
@@ -91,35 +98,152 @@ class VelaRepositoryImpl @Inject constructor(
 
     override suspend fun getResolution(): Resource<String> = safeApiCall {
         val res = apiService.getResolution()
+        val current = velaDao.observeResolution().firstOrNull()?.toDomain()
         val domain = VelaResolution(
             width = res.width ?: 0,
             height = res.height ?: 0,
             refresh = res.refresh ?: 0.0,
-            output = res.output
+            output = res.output,
+            rotation = current?.rotation ?: "normal",
+            nightLightEnabled = current?.nightLightEnabled ?: false,
+            nightLightTemp = current?.nightLightTemp ?: 4500
         )
         velaDao.upsertResolution(VelaResolutionEntity.fromDomain(domain))
         "${res.width}x${res.height} @ ${res.refresh}Hz"
     }
 
+    override suspend fun monitorOff(): Resource<Unit> = safeApiCall {
+        apiService.monitorOff()
+        Unit
+    }
+
+    override suspend fun monitorOn(): Resource<Unit> = safeApiCall {
+        apiService.monitorOn()
+        Unit
+    }
+
+    override suspend fun rotateDisplay(orientation: String): Resource<Unit> = safeApiCall {
+        apiService.rotateDisplay(RotateRequest(orientation))
+        val current = velaDao.observeResolution().firstOrNull()?.toDomain()
+        if (current != null) {
+            velaDao.upsertResolution(VelaResolutionEntity.fromDomain(current.copy(rotation = orientation)))
+        }
+        Unit
+    }
+
+    override suspend fun setNightLight(enabled: Boolean, temperature: Int?): Resource<Unit> = safeApiCall {
+        apiService.setNightLight(NightLightRequest(enabled, temperature))
+        val current = velaDao.observeResolution().firstOrNull()?.toDomain()
+        if (current != null) {
+            velaDao.upsertResolution(VelaResolutionEntity.fromDomain(
+                current.copy(
+                    nightLightEnabled = enabled,
+                    nightLightTemp = temperature ?: current.nightLightTemp
+                )
+            ))
+        }
+        Unit
+    }
+
+    override suspend fun recordDisplay(durationSeconds: Int): Resource<String> = safeApiCall {
+        apiService.recordDisplay(RecordRequest(durationSeconds)).imageBase64 ?: ""
+    }
+
     override suspend fun getVolume(): Resource<VelaAudioState> = safeApiCall {
         val res = apiService.getVolume()
-        val domain = VelaAudioState(res.volume ?: 0, res.muted ?: false)
+        val current = velaDao.observeAudio().firstOrNull()?.toDomain()
+        val domain = VelaAudioState(
+            volume = res.volume ?: 0, 
+            muted = res.muted ?: false,
+            micMuted = current?.micMuted ?: false,
+            activeDeviceId = current?.activeDeviceId
+        )
         velaDao.upsertAudio(VelaAudioEntity.fromDomain(domain))
         domain
     }
 
     override suspend fun setVolume(value: Int): Resource<VelaAudioState> = safeApiCall {
         val res = apiService.setVolume(AudioVolumeRequest(value))
-        val domain = VelaAudioState(res.volume ?: 0, res.muted ?: false)
+        val current = velaDao.observeAudio().firstOrNull()?.toDomain()
+        val domain = VelaAudioState(
+            volume = res.volume ?: 0, 
+            muted = res.muted ?: false,
+            micMuted = current?.micMuted ?: false,
+            activeDeviceId = current?.activeDeviceId
+        )
         velaDao.upsertAudio(VelaAudioEntity.fromDomain(domain))
         domain
     }
 
     override suspend fun setMute(muted: Boolean): Resource<VelaAudioState> = safeApiCall {
         val res = apiService.setMute(AudioMuteRequest(muted))
-        val domain = VelaAudioState(res.volume ?: 0, res.muted ?: false)
+        val current = velaDao.observeAudio().firstOrNull()?.toDomain()
+        val domain = VelaAudioState(
+            volume = res.volume ?: 0, 
+            muted = res.muted ?: false,
+            micMuted = current?.micMuted ?: false,
+            activeDeviceId = current?.activeDeviceId
+        )
         velaDao.upsertAudio(VelaAudioEntity.fromDomain(domain))
         domain
+    }
+
+    override suspend fun volumeUp(step: Int): Resource<VelaAudioState> = safeApiCall {
+        val res = apiService.volumeUp(AudioStepRequest(step))
+        val current = velaDao.observeAudio().firstOrNull()?.toDomain()
+        val domain = VelaAudioState(
+            volume = res.volume ?: 0, 
+            muted = res.muted ?: false,
+            micMuted = current?.micMuted ?: false,
+            activeDeviceId = current?.activeDeviceId
+        )
+        velaDao.upsertAudio(VelaAudioEntity.fromDomain(domain))
+        domain
+    }
+
+    override suspend fun volumeDown(step: Int): Resource<VelaAudioState> = safeApiCall {
+        val res = apiService.volumeDown(AudioStepRequest(step))
+        val current = velaDao.observeAudio().firstOrNull()?.toDomain()
+        val domain = VelaAudioState(
+            volume = res.volume ?: 0, 
+            muted = res.muted ?: false,
+            micMuted = current?.micMuted ?: false,
+            activeDeviceId = current?.activeDeviceId
+        )
+        velaDao.upsertAudio(VelaAudioEntity.fromDomain(domain))
+        domain
+    }
+
+    override suspend fun getAudioDevices(): Resource<List<VelaAudioDevice>> = safeApiCall {
+        val current = velaDao.observeAudio().firstOrNull()?.toDomain()
+        val domains = apiService.getAudioDevices().map { 
+            VelaAudioDevice(
+                id = it.id ?: "",
+                name = it.name ?: "Unknown Device",
+                type = it.type ?: "unknown",
+                isActive = it.id == current?.activeDeviceId
+            )
+        }
+        velaDao.replaceAudioDevices(domains.map { VelaAudioDeviceEntity.fromDomain(it) })
+        domains
+    }
+
+    override suspend fun setOutputDevice(deviceId: String): Resource<Unit> = safeApiCall {
+        apiService.setOutputDevice(AudioOutputDeviceRequest(deviceId))
+        val current = velaDao.observeAudio().firstOrNull()?.toDomain()
+        if (current != null) {
+            velaDao.upsertAudio(VelaAudioEntity.fromDomain(current.copy(activeDeviceId = deviceId)))
+        }
+        Unit
+    }
+
+    override suspend fun setMicMute(muted: Boolean): Resource<Unit> = safeApiCall {
+        if (muted) apiService.disableMic() else apiService.enableMic()
+        val current = velaDao.observeAudio().firstOrNull()?.toDomain()
+        if (current != null) {
+            velaDao.upsertAudio(VelaAudioEntity.fromDomain(current.copy(micMuted = muted)))
+        }
+        Unit
     }
 
     override suspend fun shutdown(): Resource<Unit> = safeApiCall {
@@ -385,6 +509,51 @@ class VelaRepositoryImpl @Inject constructor(
         val domain = VelaRamUsage(res.percent ?: 0.0)
         velaDao.upsertRamUsage(VelaRamUsageEntity.fromDomain(domain))
         domain
+    }
+
+    // In VelaRepositoryImpl.kt
+
+    override suspend fun getScheduledTasks(): Resource<List<VelaScheduledTask>> = safeApiCall {
+        val response = apiService.listScheduledTasks()
+        val domains = response.jobs?.map {
+            VelaScheduledTask(
+                id = it.id ?: "",
+                command = it.command ?: "",
+                // Use runAt if nextRun is null as a fallback
+                nextRun = it.nextRun ?: it.runAt ?: "Unknown",
+                recurring = it.recurring
+            )
+        } ?: emptyList()
+
+        velaDao.replaceScheduledTasks(domains.map { VelaScheduledTaskEntity.fromDomain(it) })
+        domains
+    }
+
+    override suspend fun createScheduledTask(
+        command: String,
+        runAt: String,
+        recurring: String?
+    ): Resource<VelaScheduledTask> = safeApiCall {
+        val res = apiService.createScheduledTask(SchedulerCreateRequest(command, runAt, recurring))
+        val domain = VelaScheduledTask(
+            id = res.id ?: "",
+            command = res.command ?: command,
+            nextRun = res.nextRun ?: runAt,
+            recurring = res.recurring ?: recurring
+        )
+        velaDao.upsertScheduledTasks(listOf(VelaScheduledTaskEntity.fromDomain(domain)))
+        domain
+    }
+
+    override suspend fun cancelScheduledTask(taskId: String): Resource<Unit> = safeApiCall {
+        apiService.cancelScheduledTask(taskId)
+        velaDao.deleteScheduledTask(taskId)
+        Unit
+    }
+
+    override suspend fun runTaskNow(taskId: String): Resource<Unit> = safeApiCall {
+        apiService.runTaskNow(taskId)
+        Unit
     }
 
     private fun parseProcessesResiliently(jsonStr: String): List<VelaProcess> {

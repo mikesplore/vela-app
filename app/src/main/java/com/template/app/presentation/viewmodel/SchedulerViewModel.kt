@@ -1,0 +1,115 @@
+package com.template.app.presentation.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.template.app.core.utils.Resource
+import com.template.app.domain.model.VelaScheduledTask
+import com.template.app.domain.repository.VelaRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+data class SchedulerState(
+    val tasks: List<VelaScheduledTask> = emptyList(),
+    val isLoading: Boolean = false,
+    val isCreating: Boolean = false,
+    val error: String? = null,
+    
+    // Form fields
+    val command: String = "",
+    val runAt: String = "",
+    val isRecurring: Boolean = false,
+    val recurringInterval: String? = "Daily"
+)
+
+@HiltViewModel
+class SchedulerViewModel @Inject constructor(
+    private val velaRepository: VelaRepository
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(SchedulerState())
+    val state = _state.asStateFlow()
+
+    init {
+        observeTasks()
+        refreshTasks()
+    }
+
+    private fun observeTasks() {
+        velaRepository.observeScheduledTasks()
+            .onEach { tasks -> _state.update { it.copy(tasks = tasks) } }
+            .launchIn(viewModelScope)
+    }
+
+    fun refreshTasks() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            when (val result = velaRepository.getScheduledTasks()) {
+                is Resource.Error -> _state.update { it.copy(error = result.message, isLoading = false) }
+                else -> _state.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+
+    fun updateCommand(value: String) {
+        _state.update { it.copy(command = value) }
+    }
+
+    fun updateRunAt(value: String) {
+        _state.update { it.copy(runAt = value) }
+    }
+
+    fun toggleRecurring(value: Boolean) {
+        _state.update { it.copy(isRecurring = value) }
+    }
+
+    fun createTask() {
+        val currentState = _state.value
+        if (currentState.command.isBlank() || currentState.runAt.isBlank()) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isCreating = true) }
+            val result = velaRepository.createScheduledTask(
+                command = currentState.command,
+                runAt = currentState.runAt,
+                recurring = if (currentState.isRecurring) currentState.recurringInterval else null
+            )
+            
+            when (result) {
+                is Resource.Success -> {
+                    _state.update { it.copy(
+                        isCreating = false,
+                        command = "",
+                        runAt = "",
+                        isRecurring = false
+                    ) }
+                }
+                is Resource.Error -> {
+                    _state.update { it.copy(isCreating = false, error = result.message) }
+                }
+                else -> {
+                    _state.update { it.copy(isCreating = false) }
+                }
+            }
+        }
+    }
+
+    fun cancelTask(taskId: String) {
+        viewModelScope.launch {
+            when (val result = velaRepository.cancelScheduledTask(taskId)) {
+                is Resource.Error -> _state.update { it.copy(error = result.message) }
+                else -> {}
+            }
+        }
+    }
+
+    fun runTaskNow(taskId: String) {
+        viewModelScope.launch {
+            when (val result = velaRepository.runTaskNow(taskId)) {
+                is Resource.Error -> _state.update { it.copy(error = result.message) }
+                else -> {}
+            }
+        }
+    }
+}

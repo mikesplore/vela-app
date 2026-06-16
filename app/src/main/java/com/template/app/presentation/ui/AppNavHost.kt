@@ -2,11 +2,10 @@ package com.template.app.presentation.ui
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.template.app.presentation.ui.screens.*
+import com.template.app.presentation.ui.screens.onboarding.OnboardingScreen
 
 // ──── Route constants ─────────────────────────────────────────────────────────
 object Routes {

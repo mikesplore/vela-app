@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.template.app.core.sync.DataSyncManager
+import com.template.app.core.utils.AppEventManager
 import com.template.app.core.utils.Resource
 import com.template.app.domain.model.*
 import com.template.app.domain.repository.VelaRepository
@@ -43,7 +44,8 @@ data class DashboardState(
 class DashboardViewModel @Inject constructor(
     private val velaRepository: VelaRepository,
     private val clearSettingsUseCase: ClearSettingsUseCase,
-    private val dataSyncManager: DataSyncManager
+    private val dataSyncManager: DataSyncManager,
+    private val appEventManager: AppEventManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
@@ -51,9 +53,17 @@ class DashboardViewModel @Inject constructor(
 
     private val _processLimit = MutableStateFlow(5)
 
+    private val _isFabExpanded = MutableStateFlow(false)
+    val isFabExpanded: StateFlow<Boolean> = _isFabExpanded.asStateFlow()
+
+
     init {
         observeData()
         startUptimeTicking()
+    }
+
+    fun setFabVisible(visible: Boolean) {
+        appEventManager.setDashboardFabVisible(visible)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

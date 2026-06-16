@@ -1,5 +1,7 @@
 package com.template.app.core.network
 
+import com.squareup.moshi.Moshi
+import com.template.app.core.data.remote.dto.ApiErrorResponse
 import com.template.app.core.utils.AppEventManager
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -10,7 +12,8 @@ import javax.inject.Inject
  * Intercepts network responses and emits snackbar events for errors.
  */
 class ErrorInterceptor @Inject constructor(
-    private val appEventManager: AppEventManager
+    private val appEventManager: AppEventManager,
+    private val moshi: Moshi
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -23,7 +26,16 @@ class ErrorInterceptor @Inject constructor(
         }
 
         if (!response.isSuccessful) {
-            val errorMessage = when (response.code) {
+            val errorBody = response.body?.string()
+            val apiError = errorBody?.let {
+                try {
+                    moshi.adapter(ApiErrorResponse::class.java).fromJson(it)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            val errorMessage = apiError?.message ?: when (response.code) {
                 401 -> "Unauthorized — please log in again"
                 403 -> "Forbidden"
                 404 -> "Resource not found"
@@ -31,6 +43,11 @@ class ErrorInterceptor @Inject constructor(
                 else -> "Error ${response.code}: ${response.message}"
             }
             appEventManager.showSnackbar(errorMessage)
+
+            // Re-create the response body since we've consumed it
+            return response.newBuilder()
+                .body(okhttp3.ResponseBody.create(response.body?.contentType(), errorBody ?: ""))
+                .build()
         }
 
         return response

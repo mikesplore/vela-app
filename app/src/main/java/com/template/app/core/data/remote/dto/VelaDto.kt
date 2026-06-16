@@ -29,6 +29,14 @@ data class GenericResponse(
     val message: String? = null
 )
 
+@JsonClass(generateAdapter = true)
+data class ApiErrorResponse(
+    val success: Boolean,
+    val statusCode: Int? = null,
+    val message: String? = null,
+    val timestamp: String? = null
+)
+
 // ── Display ──
 
 @JsonClass(generateAdapter = true)
@@ -468,9 +476,16 @@ data class SchedulerCreateRequest(
 @JsonClass(generateAdapter = true)
 data class ScheduledTask(
     val id: String? = null,
-    @Json(name = "next_run") val nextRun: String? = null,
+    @Json(name = "next_run_time") val nextRun: String? = null,
+    @Json(name = "run_at") val runAt: String? = null,
     val command: String? = null,
+    val args: List<String>? = null,
     val recurring: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SchedulerListResponse(
+    val jobs: List<ScheduledTask>? = null
 )
 
 // ── Maintenance ──

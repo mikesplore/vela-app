@@ -28,6 +28,23 @@ interface VelaDao {
     @Upsert
     suspend fun upsertAudio(audio: VelaAudioEntity)
 
+    @Query("SELECT * FROM vela_audio_devices")
+    fun observeAudioDevices(): Flow<List<VelaAudioDeviceEntity>>
+
+    @Upsert
+    suspend fun upsertAudioDevices(devices: List<VelaAudioDeviceEntity>)
+
+    @Query("DELETE FROM vela_audio_devices")
+    suspend fun clearAudioDevices()
+
+    @Transaction
+    suspend fun replaceAudioDevices(devices: List<VelaAudioDeviceEntity>) {
+        clearAudioDevices()
+        if (devices.isNotEmpty()) {
+            upsertAudioDevices(devices)
+        }
+    }
+
     @Query("SELECT * FROM vela_media WHERE id = 0")
     fun observeMedia(): Flow<VelaMediaEntity?>
 
@@ -139,4 +156,24 @@ interface VelaDao {
 
     @Upsert
     suspend fun upsertActiveWindow(activeWindow: VelaActiveWindowEntity)
+
+    @Query("SELECT * FROM vela_scheduled_tasks")
+    fun observeScheduledTasks(): Flow<List<VelaScheduledTaskEntity>>
+
+    @Upsert
+    suspend fun upsertScheduledTasks(tasks: List<VelaScheduledTaskEntity>)
+
+    @Query("DELETE FROM vela_scheduled_tasks")
+    suspend fun clearScheduledTasks()
+
+    @Query("DELETE FROM vela_scheduled_tasks WHERE id = :taskId")
+    suspend fun deleteScheduledTask(taskId: String)
+
+    @Transaction
+    suspend fun replaceScheduledTasks(tasks: List<VelaScheduledTaskEntity>) {
+        clearScheduledTasks()
+        if (tasks.isNotEmpty()) {
+            upsertScheduledTasks(tasks)
+        }
+    }
 }

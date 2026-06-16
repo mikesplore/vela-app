@@ -2,6 +2,7 @@ package com.template.app.presentation.ui.screens
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -176,13 +177,27 @@ fun MediaScreen(
                     fontWeight = FontWeight.Bold,
                     color = colorScheme.onBackground,
                     textAlign = TextAlign.Center,
-                    maxLines = 1
+                    maxLines = 1,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .basicMarquee(
+                            iterations = Int.MAX_VALUE, // Keeps scrolling infinitely
+                            repeatDelayMillis = 2000    // Pause for 2 seconds before repeating
+                        )
+                        .padding(horizontal = 16.dp)
                 )
                 Text(
                     text = mediaState?.artist ?: "Unknown Artist",
                     fontSize = 18.sp,
                     color = colorScheme.onBackground.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .fillMaxWidth()
+                        .basicMarquee(
+                            iterations = Int.MAX_VALUE,
+                            repeatDelayMillis = 3000
+                        )
+                        .padding(horizontal = 24.dp),
                     textAlign = TextAlign.Center,
                     maxLines = 1
                 )

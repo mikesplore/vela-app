@@ -117,7 +117,7 @@ fun MainScreen(onLogout: () -> Unit) {
             composable(Routes.CLIPBOARD) { ClipboardScreen() }
             composable(Routes.INPUT_CONTROL) { InputControlScreen() }
             composable(Routes.NOTIFICATIONS) { NotificationsScreen() }
-            composable(Routes.SETTINGS) { SettingsScreen() }
+            composable(Routes.SETTINGS) { SettingsScreen(onCredentialsCleared = { onLogout() })}
         }
 
         if (showSheet) {

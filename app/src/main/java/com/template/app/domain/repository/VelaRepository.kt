@@ -9,6 +9,7 @@ interface VelaRepository {
     fun observeHealth(): Flow<VelaHealth?>
     fun observeNetwork(): Flow<VelaNetworkInfo?>
     fun observeAudio(): Flow<VelaAudioState?>
+    fun observeAudioDevices(): Flow<List<VelaAudioDevice>>
     fun observeMedia(): Flow<VelaMediaState?>
     fun observeProcesses(limit: Int = 5): Flow<List<VelaProcess>>
     fun observeDisks(): Flow<List<VelaDiskUsage>>
@@ -20,6 +21,7 @@ interface VelaRepository {
     fun observeRamUsage(): Flow<VelaRamUsage?>
     fun observeClipboard(): Flow<VelaClipboard?>
     fun observeActiveWindow(): Flow<String?>
+    fun observeScheduledTasks(): Flow<List<VelaScheduledTask>>
 
     // General
     suspend fun getHealth(): Resource<VelaHealth>
@@ -30,11 +32,21 @@ interface VelaRepository {
     suspend fun lockDisplay(): Resource<Unit>
     suspend fun getResolution(): Resource<String>
     suspend fun getBrightness(): Resource<Int>
+    suspend fun monitorOff(): Resource<Unit>
+    suspend fun monitorOn(): Resource<Unit>
+    suspend fun rotateDisplay(orientation: String): Resource<Unit>
+    suspend fun setNightLight(enabled: Boolean, temperature: Int? = null): Resource<Unit>
+    suspend fun recordDisplay(durationSeconds: Int): Resource<String> // base64
     
     // Audio
     suspend fun getVolume(): Resource<VelaAudioState>
     suspend fun setVolume(value: Int): Resource<VelaAudioState>
     suspend fun setMute(muted: Boolean): Resource<VelaAudioState>
+    suspend fun volumeUp(step: Int = 5): Resource<VelaAudioState>
+    suspend fun volumeDown(step: Int = 5): Resource<VelaAudioState>
+    suspend fun getAudioDevices(): Resource<List<VelaAudioDevice>>
+    suspend fun setOutputDevice(deviceId: String): Resource<Unit>
+    suspend fun setMicMute(muted: Boolean): Resource<Unit>
     
     // Power
     suspend fun shutdown(): Resource<Unit>
@@ -87,4 +99,10 @@ interface VelaRepository {
     // Monitor
     suspend fun getCpuUsage(): Resource<VelaCpuUsage>
     suspend fun getRamUsage(): Resource<VelaRamUsage>
+
+    // Scheduler
+    suspend fun getScheduledTasks(): Resource<List<VelaScheduledTask>>
+    suspend fun createScheduledTask(command: String, runAt: String, recurring: String? = null): Resource<VelaScheduledTask>
+    suspend fun cancelScheduledTask(taskId: String): Resource<Unit>
+    suspend fun runTaskNow(taskId: String): Resource<Unit>
 }

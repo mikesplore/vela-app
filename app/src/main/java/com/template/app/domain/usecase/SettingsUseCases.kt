@@ -1,5 +1,6 @@
 package com.template.app.domain.usecase
 
+import com.template.app.domain.model.AppThemeMode
 import com.template.app.domain.model.ConnectionSettings
 import com.template.app.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
@@ -14,14 +15,24 @@ class GetSettingsUseCase @Inject constructor(
 class SaveSettingsUseCase @Inject constructor(
     private val repository: SettingsRepository
 ) {
-    suspend operator fun invoke(baseUrl: String, apiToken: String) {
+    suspend operator fun invoke(
+        baseUrl: String,
+        apiToken: String,
+        themeMode: AppThemeMode = AppThemeMode.SYSTEM
+    ) {
+        val current = repository.getSettings()
         repository.saveSettings(
-            ConnectionSettings(
+            current.copy(
                 baseUrl = baseUrl,
                 apiToken = apiToken,
-                onboardingComplete = false
+                themeMode = themeMode
             )
         )
+    }
+
+    suspend fun updateTheme(themeMode: AppThemeMode) {
+        val current = repository.getSettings()
+        repository.saveSettings(current.copy(themeMode = themeMode))
     }
 }
 

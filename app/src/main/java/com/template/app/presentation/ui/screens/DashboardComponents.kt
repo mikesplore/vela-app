@@ -155,15 +155,21 @@ fun StatusCard(
     health: VelaHealth
 ) {
     VelaCard {
-        VelaSectionHeader("System uptime")
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = formatUptime(health.uptimeSeconds),
-            fontWeight = FontWeight.Medium,
-            fontSize = 50.sp,
-            fontFamily = FontFamily.Monospace,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            VelaSectionHeader("System uptime")
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = formatUptime(health.uptimeSeconds),
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 52.sp,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
@@ -377,12 +383,6 @@ fun ProcessSummaryCard(
                 fontSize = 11.sp,
                 color = cs.secondary
             )
-        }
-
-        if (!activeWindow.isNullOrBlank()) {
-            Spacer(Modifier.height(12.dp))
-            Box(Modifier.then(rowDivider(cs)))
-            DataRow("Active window", activeWindow, valueColor = cs.onSurfaceVariant)
         }
     }
 }

@@ -6,13 +6,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,9 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,8 +30,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.template.app.core.utils.UiEvent
+import com.template.app.domain.model.AppThemeMode
 import com.template.app.presentation.ui.AppNavHost
 import com.template.app.presentation.ui.theme.AppTheme
 import com.template.app.presentation.viewmodel.MainViewModel
@@ -63,8 +60,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val startDestination by viewModel.startDestination.collectAsStateWithLifecycle()
+            val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val snackbarHostState = remember { SnackbarHostState() }
-            val colorScheme = MaterialTheme.colorScheme
 
             LaunchedEffect(Unit) {
                 viewModel.appEventManager.events.collectLatest { event ->
@@ -72,11 +69,18 @@ class MainActivity : ComponentActivity() {
                         is UiEvent.ShowSnackbar -> {
                             snackbarHostState.showSnackbar(event.message)
                         }
+                        else -> {}
                     }
                 }
             }
 
-            AppTheme(darkTheme = false) {
+            val isDarkTheme = when (themeMode) {
+                AppThemeMode.LIGHT -> false
+                AppThemeMode.DARK -> true
+                AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+
+            AppTheme(darkTheme = isDarkTheme) {
                 Scaffold(
                     topBar = {
                         VelaTopBar(
@@ -86,7 +90,7 @@ class MainActivity : ComponentActivity() {
                         )
 
                     },
-                    snackbarHost = { SnackbarHost(snackbarHostState) }
+                    snackbarHost = { SnackbarHost(snackbarHostState) },
                 ) { innerPadding ->
                     Surface(
                         modifier = Modifier

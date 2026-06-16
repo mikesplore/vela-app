@@ -53,7 +53,11 @@ class DataSyncManager @Inject constructor(
                     launch { velaRepository.getDiskUsage() },
                     launch { velaRepository.getProcesses() },
                     launch { velaRepository.getActiveWindow() },
-                    launch { velaRepository.getResolution() }
+                    launch { velaRepository.getResolution() },
+                    launch { velaRepository.getAudioDevices() },
+                    launch { velaRepository.getProcesses() },
+                    launch { velaRepository.getBluetoothDevices() },
+                    launch { velaRepository.getScheduledTasks() }
                 )
                 tasks.joinAll()
             }

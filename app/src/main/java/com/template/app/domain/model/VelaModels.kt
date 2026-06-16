@@ -2,7 +2,8 @@ package com.template.app.domain.model
 
 data class VelaHealth(
     val status: String,
-    val uptimeSeconds: Long
+    val uptimeSeconds: Long,
+    val version: String = "1.0.0"
 )
 
 data class VelaNetworkInfo(
@@ -21,7 +22,16 @@ data class VelaLocation(
 
 data class VelaAudioState(
     val volume: Int,
-    val muted: Boolean
+    val muted: Boolean,
+    val micMuted: Boolean = false,
+    val activeDeviceId: String? = null
+)
+
+data class VelaAudioDevice(
+    val id: String,
+    val name: String,
+    val type: String,
+    val isActive: Boolean = false
 )
 
 data class VelaMediaState(
@@ -98,7 +108,10 @@ data class VelaResolution(
     val width: Int,
     val height: Int,
     val refresh: Double,
-    val output: String?
+    val output: String?,
+    val rotation: String = "normal",
+    val nightLightEnabled: Boolean = false,
+    val nightLightTemp: Int = 4500
 )
 
 data class VelaCpuUsage(
@@ -119,4 +132,11 @@ data class VelaFileInfo(
 
 data class VelaClipboard(
     val content: String
+)
+
+data class VelaScheduledTask(
+    val id: String,
+    val command: String,
+    val nextRun: String,
+    val recurring: String? = null
 )
