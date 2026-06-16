@@ -9,7 +9,7 @@ import com.template.app.presentation.ui.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,12 +25,19 @@ class MainViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val settings = getSettingsUseCase().first()
-            if (settings.baseUrl.isNotBlank() && settings.apiToken.isNotBlank()) {
-                _startDestination.value = Routes.MAIN
-                dataSyncManager.startSync()
-            } else {
-                _startDestination.value = Routes.ONBOARDING
+            getSettingsUseCase().collectLatest { settings ->
+                val isValid = settings.baseUrl.isNotBlank() && settings.apiToken.isNotBlank()
+                
+                // Set initial destination only once
+                if (_startDestination.value == null) {
+                    _startDestination.value = if (isValid) Routes.MAIN else Routes.ONBOARDING
+                }
+
+                if (isValid) {
+                    dataSyncManager.startSync()
+                } else {
+                    dataSyncManager.stopSync()
+                }
             }
         }
     }

@@ -35,7 +35,6 @@ fun DashboardScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var isFabMenuExpanded by remember { mutableStateOf(false) }
     val colorScheme = MaterialTheme.colorScheme
-    val gradientAccent = Brush.horizontalGradient(listOf(colorScheme.primary, colorScheme.secondary))
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -48,7 +47,7 @@ fun DashboardScreen(
                             modifier = Modifier
                                 .size(30.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(gradientAccent),
+                                .background(colorScheme.primary),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(

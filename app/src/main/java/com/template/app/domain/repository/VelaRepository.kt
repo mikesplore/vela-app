@@ -19,6 +19,7 @@ interface VelaRepository {
     fun observeCpuUsage(): Flow<VelaCpuUsage?>
     fun observeRamUsage(): Flow<VelaRamUsage?>
     fun observeClipboard(): Flow<VelaClipboard?>
+    fun observeActiveWindow(): Flow<String?>
 
     // General
     suspend fun getHealth(): Resource<VelaHealth>

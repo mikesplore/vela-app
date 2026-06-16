@@ -32,9 +32,10 @@ import com.template.app.core.data.local.entities.*
         VelaResolutionEntity::class,
         VelaCpuUsageEntity::class,
         VelaRamUsageEntity::class,
-        VelaClipboardEntity::class
+        VelaClipboardEntity::class,
+        VelaActiveWindowEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

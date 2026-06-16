@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.template.app.core.sync.DataSyncManager
 import com.template.app.core.utils.Resource
 import com.template.app.domain.model.*
 import com.template.app.domain.repository.VelaRepository
@@ -41,7 +42,8 @@ data class DashboardState(
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val velaRepository: VelaRepository,
-    private val clearSettingsUseCase: ClearSettingsUseCase
+    private val clearSettingsUseCase: ClearSettingsUseCase,
+    private val dataSyncManager: DataSyncManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
@@ -56,6 +58,11 @@ class DashboardViewModel @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeData() {
+        // Observe Sync Status
+        dataSyncManager.isSyncing
+            .onEach { syncing -> _state.update { it.copy(isRefreshing = syncing) } }
+            .launchIn(viewModelScope)
+
         // Observe all data streams from Room DB
         velaRepository.observeHealth()
             .onEach { health -> 
@@ -81,6 +88,10 @@ class DashboardViewModel @Inject constructor(
 
         velaRepository.observeMedia()
             .onEach { media -> _state.update { it.copy(media = media) } }
+            .launchIn(viewModelScope)
+
+        velaRepository.observeActiveWindow()
+            .onEach { window -> _state.update { it.copy(activeWindow = window) } }
             .launchIn(viewModelScope)
 
         velaRepository.observeDisks()
@@ -128,13 +139,18 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    fun refreshAllData() {
+        viewModelScope.launch {
+            dataSyncManager.performSyncCycle()
+        }
+    }
+
     fun toggleProcessLimit() {
         val newLimit = if (_processLimit.value == 5) 50 else 5
         _processLimit.value = newLimit
         _state.update { it.copy(processLimit = newLimit) }
     }
 
-    // Actions still trigger network calls, which then update the DB
     fun setVolume(value: Int) {
         viewModelScope.launch { velaRepository.setVolume(value) }
     }
@@ -188,7 +204,7 @@ class DashboardViewModel @Inject constructor(
     }
 
     private fun formatBytes(bytesStr: String?): String {
-        if (bytesStr.isNullOrBlank()) return "0.0 B"
+        if (bytesStr.isNullOrBlank() || bytesStr == "0") return "0.0 B"
         val cleanInput = bytesStr.split("\n").firstOrNull()?.trim() ?: "0"
         val bytes = cleanInput.toLongOrNull() ?: return bytesStr
         if (bytes < 1024) return "$bytes B"

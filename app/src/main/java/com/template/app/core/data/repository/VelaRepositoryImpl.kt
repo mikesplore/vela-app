@@ -59,6 +59,9 @@ class VelaRepositoryImpl @Inject constructor(
     override fun observeClipboard(): Flow<VelaClipboard?> =
         velaDao.observeClipboard().map { it?.let { VelaClipboard(it.content) } }
 
+    override fun observeActiveWindow(): Flow<String?> =
+        velaDao.observeActiveWindow().map { it?.title }
+
     // --- Actions & Refreshing ---
 
     override suspend fun getHealth(): Resource<VelaHealth> = safeApiCall {
@@ -140,9 +143,9 @@ class VelaRepositoryImpl @Inject constructor(
         val domains = apiService.getDiskUsage().usage?.map {
             VelaDiskUsage(
                 mountpoint = it.mountpoint ?: "",
-                total = it.total ?: "-",
-                used = it.used?: "-",
-                free = it.free ?: "-",
+                total = it.total ?: "0",
+                used = it.used?: "0",
+                free = it.free ?: "0",
                 percent = it.percent ?: 0.0
             )
         } ?: emptyList()
@@ -233,7 +236,9 @@ class VelaRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getActiveWindow(): Resource<String> = safeApiCall {
-        apiService.getActiveWindow().title ?: ""
+        val title = apiService.getActiveWindow().title ?: ""
+        velaDao.upsertActiveWindow(VelaActiveWindowEntity.fromTitle(title))
+        title
     }
 
     override suspend fun getBrightness(): Resource<Int> = safeApiCall {
