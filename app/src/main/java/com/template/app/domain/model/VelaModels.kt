@@ -1,37 +1,16 @@
 package com.template.app.domain.model
 
+import android.graphics.Bitmap
+
 data class VelaHealth(
     val status: String,
     val uptimeSeconds: Long
-)
-
-data class VelaFileInfo(
-    val name: String,
-    val path: String,
-    val type: String,
-    val size: Long,
-    val modified: Long
-)
-
-data class VelaDiskUsage(
-    val mountpoint: String,
-    val total: String,
-    val used: String,
-    val free: String,
-    val percent: Double
 )
 
 data class VelaNetworkInfo(
     val localIp: String,
     val publicIp: String,
     val interfaceName: String
-)
-
-data class VelaProcess(
-    val pid: Int,
-    val name: String,
-    val cpu: Double,
-    val mem: Double
 )
 
 data class VelaAudioState(
@@ -47,6 +26,21 @@ data class VelaMediaState(
     val positionSeconds: Double?,
     val lengthSeconds: Double?,
     val artUrl: String? = null
+)
+
+data class VelaProcess(
+    val pid: Int,
+    val name: String,
+    val cpu: Double,
+    val mem: Double
+)
+
+data class VelaDiskUsage(
+    val mountpoint: String,
+    val total: String,
+    val used: String,
+    val free: String,
+    val percent: Double
 )
 
 data class VelaNotification(
@@ -80,4 +74,16 @@ data class VelaCpuUsage(
 
 data class VelaRamUsage(
     val percent: Double
+)
+
+data class VelaFileInfo(
+    val name: String,
+    val path: String,
+    val type: String,
+    val size: Long,
+    val modified: Long
+)
+
+data class VelaClipboard(
+    val content: String
 )

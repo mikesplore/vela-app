@@ -6,6 +6,7 @@ import com.template.app.BuildConfig
 import com.template.app.core.data.remote.api.UserApiService
 import com.template.app.core.data.remote.api.VelaApiService
 import com.template.app.core.network.AuthInterceptor
+import com.template.app.core.network.ErrorInterceptor
 import com.template.app.core.network.VelaInterceptor
 import dagger.Module
 import dagger.Provides
@@ -55,8 +56,10 @@ object NetworkModule {
     fun provideUserOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor,
         authInterceptor: AuthInterceptor,
+        errorInterceptor: ErrorInterceptor,
     ): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)
+        .addInterceptor(errorInterceptor)
         .addInterceptor(loggingInterceptor)
         .connectTimeout(30, TimeUnit.SECONDS)
         .build()
@@ -86,8 +89,10 @@ object NetworkModule {
     fun provideVelaOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor,
         velaInterceptor: VelaInterceptor,
+        errorInterceptor: ErrorInterceptor,
     ): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(velaInterceptor)
+        .addInterceptor(errorInterceptor)
         .addInterceptor(loggingInterceptor)
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)

@@ -7,6 +7,8 @@ import com.template.app.domain.repository.VelaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,7 +29,16 @@ class ClipboardViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     init {
+        observeClipboard()
         refresh()
+    }
+
+    private fun observeClipboard() {
+        repository.observeClipboard()
+            .onEach { clipboard ->
+                _state.update { it.copy(content = clipboard?.content ?: "") }
+            }
+            .launchIn(viewModelScope)
     }
 
     fun refresh() {
@@ -35,7 +46,8 @@ class ClipboardViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, error = null) }
             when (val result = repository.readClipboard()) {
                 is Resource.Success -> {
-                    _state.update { it.copy(content = result.data, isLoading = false) }
+                    // DB observer will update the content
+                    _state.update { it.copy(isLoading = false) }
                 }
                 is Resource.Error -> {
                     _state.update { it.copy(error = result.message, isLoading = false) }
@@ -50,7 +62,7 @@ class ClipboardViewModel @Inject constructor(
             _state.update { it.copy(isUpdating = true) }
             when (val result = repository.writeClipboard(text)) {
                 is Resource.Success -> {
-                    _state.update { it.copy(content = text, isUpdating = false) }
+                    _state.update { it.copy(isUpdating = false) }
                 }
                 is Resource.Error -> {
                     _state.update { it.copy(error = result.message, isUpdating = false) }
@@ -65,7 +77,7 @@ class ClipboardViewModel @Inject constructor(
             _state.update { it.copy(isUpdating = true) }
             when (val result = repository.clearClipboard()) {
                 is Resource.Success -> {
-                    _state.update { it.copy(content = "", isUpdating = false) }
+                    _state.update { it.copy(isUpdating = false) }
                 }
                 is Resource.Error -> {
                     _state.update { it.copy(error = result.message, isUpdating = false) }

@@ -102,9 +102,9 @@ data class VelaDiskEntity(
     companion object {
         fun fromDomain(domain: VelaDiskUsage) = VelaDiskEntity(
             mountpoint = domain.mountpoint,
-            total = domain.total.toLong(),
-            used = domain.used.toLong(),
-            free = domain.free.toLong(),
+            total = domain.total.toLongOrNull() ?: 0L,
+            used = domain.used.toLongOrNull() ?: 0L,
+            free = domain.free.toLongOrNull() ?: 0L,
             percent = domain.percent
         )
     }
@@ -198,5 +198,25 @@ data class VelaRamUsageEntity(
     fun toDomain() = VelaRamUsage(percent)
     companion object {
         fun fromDomain(domain: VelaRamUsage) = VelaRamUsageEntity(id = 0, percent = domain.percent)
+    }
+}
+
+@Entity(tableName = "vela_clipboard")
+data class VelaClipboardEntity(
+    @PrimaryKey val id: Int = 0,
+    val content: String
+) {
+    companion object {
+        fun fromContent(content: String) = VelaClipboardEntity(id = 0, content = content)
+    }
+}
+
+@Entity(tableName = "vela_active_window")
+data class VelaActiveWindowEntity(
+    @PrimaryKey val id: Int = 0,
+    val title: String
+) {
+    companion object {
+        fun fromTitle(title: String) = VelaActiveWindowEntity(id = 0, title = title)
     }
 }

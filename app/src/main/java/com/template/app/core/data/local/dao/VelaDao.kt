@@ -51,9 +51,7 @@ interface VelaDao {
         if (processes.isEmpty()) {
             clearProcesses()
         } else {
-            // Upsert first to update existing ones and add new ones
             upsertProcesses(processes)
-            // Then delete those that weren't in the new list to keep UI stable
             deleteProcessesNotIn(processes.map { it.pid })
         }
     }
@@ -91,7 +89,6 @@ interface VelaDao {
 
     @Transaction
     suspend fun replaceNotifications(notifications: List<VelaNotificationEntity>) {
-        // Notifications are usually small enough to clear and replace
         clearNotifications()
         if (notifications.isNotEmpty()) {
             upsertNotifications(notifications)
@@ -127,4 +124,19 @@ interface VelaDao {
 
     @Upsert
     suspend fun upsertRamUsage(ramUsage: VelaRamUsageEntity)
+
+    @Query("SELECT * FROM vela_clipboard WHERE id = 0")
+    fun observeClipboard(): Flow<VelaClipboardEntity?>
+
+    @Upsert
+    suspend fun upsertClipboard(clipboard: VelaClipboardEntity)
+
+    @Query("DELETE FROM vela_clipboard")
+    suspend fun clearClipboard()
+
+    @Query("SELECT * FROM vela_active_window WHERE id = 0")
+    fun observeActiveWindow(): Flow<VelaActiveWindowEntity?>
+
+    @Upsert
+    suspend fun upsertActiveWindow(activeWindow: VelaActiveWindowEntity)
 }

@@ -294,7 +294,7 @@ data class NotificationsResponse(
 
 @JsonClass(generateAdapter = true)
 data class ClipboardResponse(
-    val data: String? = null
+    @Json(name = "text") val data: String? = null
 )
 
 @JsonClass(generateAdapter = true)

@@ -56,6 +56,9 @@ class VelaRepositoryImpl @Inject constructor(
     override fun observeRamUsage(): Flow<VelaRamUsage?> =
         velaDao.observeRamUsage().map { it?.toDomain() }
 
+    override fun observeClipboard(): Flow<VelaClipboard?> =
+        velaDao.observeClipboard().map { it?.let { VelaClipboard(it.content) } }
+
     // --- Actions & Refreshing ---
 
     override suspend fun getHealth(): Resource<VelaHealth> = safeApiCall {
@@ -184,16 +187,20 @@ class VelaRepositoryImpl @Inject constructor(
     }
 
     override suspend fun readClipboard(): Resource<String> = safeApiCall {
-        apiService.readClipboard().data ?: ""
+        val data = apiService.readClipboard().data ?: ""
+        velaDao.upsertClipboard(VelaClipboardEntity.fromContent(data))
+        data
     }
 
     override suspend fun writeClipboard(text: String): Resource<Unit> = safeApiCall {
         apiService.writeClipboard(ClipboardWriteRequest(text))
+        velaDao.upsertClipboard(VelaClipboardEntity.fromContent(text))
         Unit
     }
 
     override suspend fun clearClipboard(): Resource<Unit> = safeApiCall {
         apiService.clearClipboard()
+        velaDao.clearClipboard()
         Unit
     }
 

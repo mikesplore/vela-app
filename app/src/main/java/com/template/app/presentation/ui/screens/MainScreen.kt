@@ -35,6 +35,7 @@ fun MainScreen(onLogout: () -> Unit) {
     val navController = rememberNavController()
     val sheetState = rememberModalBottomSheetState()
     var showSheet by remember { mutableStateOf(false) }
+    val colorScheme = MaterialTheme.colorScheme
 
     val items = listOf(
         NavigationItem("Dashboard", Routes.DASHBOARD, Icons.Default.Dashboard),
@@ -46,8 +47,8 @@ fun MainScreen(onLogout: () -> Unit) {
     Scaffold(
         bottomBar = {
             NavigationBar(
-                containerColor = Color(0xFF070A10),
-                contentColor = Color.White
+                containerColor = colorScheme.background,
+                contentColor = colorScheme.onBackground
             ) {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
@@ -67,10 +68,10 @@ fun MainScreen(onLogout: () -> Unit) {
                             }
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFF6C63FF),
-                            unselectedIconColor = Color(0xFF8B95A8),
-                            selectedTextColor = Color(0xFF6C63FF),
-                            unselectedTextColor = Color(0xFF8B95A8),
+                            selectedIconColor = colorScheme.primary,
+                            unselectedIconColor = colorScheme.onSurfaceVariant,
+                            selectedTextColor = colorScheme.primary,
+                            unselectedTextColor = colorScheme.onSurfaceVariant,
                             indicatorColor = Color.Transparent
                         )
                     )
@@ -83,8 +84,8 @@ fun MainScreen(onLogout: () -> Unit) {
                     selected = false,
                     onClick = { showSheet = true },
                     colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = Color(0xFF8B95A8),
-                        unselectedTextColor = Color(0xFF8B95A8)
+                        unselectedIconColor = colorScheme.onSurfaceVariant,
+                        unselectedTextColor = colorScheme.onSurfaceVariant
                     )
                 )
             }
@@ -118,8 +119,8 @@ fun MainScreen(onLogout: () -> Unit) {
             ModalBottomSheet(
                 onDismissRequest = { showSheet = false },
                 sheetState = sheetState,
-                containerColor = Color(0xFF0A0D14),
-                dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFF1E2533)) }
+                containerColor = colorScheme.surface,
+                dragHandle = { BottomSheetDefaults.DragHandle(color = colorScheme.outline) }
             ) {
                 MoreMenuGrid(
                     onNavigate = { route ->
@@ -140,6 +141,7 @@ fun MainScreen(onLogout: () -> Unit) {
 
 @Composable
 fun MoreMenuGrid(onNavigate: (String) -> Unit) {
+    val colorScheme = MaterialTheme.colorScheme
     val moreItems = listOf(
         NavigationItem("Files", Routes.FILES, Icons.Default.Folder),
         NavigationItem("Processes", Routes.PROCESSES, Icons.Default.Memory),
@@ -163,7 +165,7 @@ fun MoreMenuGrid(onNavigate: (String) -> Unit) {
             text = "SYSTEM TOOLS",
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF8B95A8),
+            color = colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 16.dp, start = 8.dp)
         )
         
@@ -182,6 +184,7 @@ fun MoreMenuGrid(onNavigate: (String) -> Unit) {
 
 @Composable
 fun MoreMenuItem(item: NavigationItem, onClick: () -> Unit) {
+    val colorScheme = MaterialTheme.colorScheme
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -192,13 +195,13 @@ fun MoreMenuItem(item: NavigationItem, onClick: () -> Unit) {
         Box(
             modifier = Modifier
                 .size(44.dp)
-                .background(Color(0xFF1E2533), RoundedCornerShape(12.dp)),
+                .background(colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = item.icon,
                 contentDescription = item.title,
-                tint = Color.White,
+                tint = colorScheme.onSurface,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -206,7 +209,7 @@ fun MoreMenuItem(item: NavigationItem, onClick: () -> Unit) {
         Text(
             text = item.title,
             fontSize = 10.sp,
-            color = Color(0xFFF0F4FF),
+            color = colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 1
         )

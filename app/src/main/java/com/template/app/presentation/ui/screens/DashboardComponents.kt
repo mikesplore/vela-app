@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.template.app.domain.model.*
+import com.template.app.presentation.ui.theme.VelaSuccess
 import java.util.Locale
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -41,12 +42,12 @@ private val SectionSpacing  = 20.dp
 
 private fun diskColor(pct: Double, cs: ColorScheme): Color = when {
     pct > 85 -> cs.error
-    pct > 60 -> Color(0xFFFFB300)
+    pct > 60 -> cs.tertiary
     else     -> cs.primary
 }
 private fun signalColor(signal: Int, cs: ColorScheme): Color = when {
-    signal > 70 -> Color(0xFF4CAF50)
-    signal > 40 -> Color(0xFFFFB300)
+    signal > 70 -> VelaSuccess
+    signal > 40 -> cs.tertiary
     else        -> cs.error
 }
 
@@ -469,8 +470,8 @@ fun BrightnessControlCard(
                 onValueChangeFinished = { onBrightnessChange(sliderValue.toInt()) },
                 valueRange = 0f..100f,
                 colors = SliderDefaults.colors(
-                    thumbColor = Color(0xFFFFB300),
-                    activeTrackColor = Color(0xFFFFB300),
+                    thumbColor = cs.tertiary,
+                    activeTrackColor = cs.tertiary,
                     inactiveTrackColor = cs.surfaceVariant
                 ),
                 modifier = Modifier.weight(1f)

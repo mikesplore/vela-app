@@ -26,20 +26,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.template.app.presentation.viewmodel.DashboardViewModel
 
-// ─── Palette (mirrors DashboardComponents tokens) ─────────────────────────────
-
-private val BgDeep       = Color(0xFF070A10)
-private val BgMid        = Color(0xFF0A0D14)
-private val AccentIndigo = Color(0xFF6C63FF)
-private val AccentCyan   = Color(0xFF00D9F5)
-private val AccentRose   = Color(0xFFF43F5E)
-private val TextPrimary  = Color(0xFFF0F4FF)
-private val TextMuted    = Color(0xFF8B95A8)
-private val CardBorder   = Color(0xFF1E2533)
-
-private val GradientAccent = Brush.horizontalGradient(listOf(AccentIndigo, AccentCyan))
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
@@ -48,6 +34,8 @@ fun DashboardScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var isFabMenuExpanded by remember { mutableStateOf(false) }
+    val colorScheme = MaterialTheme.colorScheme
+    val gradientAccent = Brush.horizontalGradient(listOf(colorScheme.primary, colorScheme.secondary))
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -60,7 +48,7 @@ fun DashboardScreen(
                             modifier = Modifier
                                 .size(30.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(GradientAccent),
+                                .background(gradientAccent),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -76,7 +64,7 @@ fun DashboardScreen(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 3.sp,
                             fontSize = 18.sp,
-                            color = TextPrimary
+                            color = colorScheme.onSurface
                         )
                     }
                 },
@@ -88,21 +76,21 @@ fun DashboardScreen(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .background(AccentRose.copy(alpha = 0.10f)),
+                                .background(colorScheme.error.copy(alpha = 0.10f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Logout,
                                 contentDescription = "Logout",
-                                tint = AccentRose,
+                                tint = colorScheme.error,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgDeep,
-                    scrolledContainerColor = BgDeep
+                    containerColor = colorScheme.background,
+                    scrolledContainerColor = colorScheme.background
                 )
             )
         },
@@ -119,7 +107,7 @@ fun DashboardScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(BgDeep)
+                .background(colorScheme.background)
                 .padding(padding)
         ) {
             // Ambient glow orbs in background
@@ -129,7 +117,7 @@ fun DashboardScreen(
                     .offset(x = (-80).dp, y = 40.dp)
                     .background(
                         Brush.radialGradient(
-                            listOf(AccentIndigo.copy(alpha = 0.07f), Color.Transparent)
+                            listOf(colorScheme.primary.copy(alpha = 0.07f), Color.Transparent)
                         ),
                         shape = CircleShape
                     )
@@ -141,7 +129,7 @@ fun DashboardScreen(
                     .offset(x = 80.dp, y = 100.dp)
                     .background(
                         Brush.radialGradient(
-                            listOf(AccentCyan.copy(alpha = 0.05f), Color.Transparent)
+                            listOf(colorScheme.secondary.copy(alpha = 0.05f), Color.Transparent)
                         ),
                         shape = CircleShape
                     )
@@ -259,17 +247,17 @@ fun DashboardScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(BgDeep.copy(alpha = 0.7f)),
+                        .background(colorScheme.background.copy(alpha = 0.7f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator(
-                            color = AccentCyan,
+                            color = colorScheme.secondary,
                             strokeWidth = 2.dp,
                             modifier = Modifier.size(48.dp)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Connecting to agent…", fontSize = 13.sp, color = TextMuted)
+                        Text("Connecting to agent…", fontSize = 13.sp, color = colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -388,16 +376,17 @@ fun OrbitalFabItem(onClick: () -> Unit, icon: ImageVector, label: String) {
 
 @Composable
 fun ErrorMessage(msg: String) {
+    val colorScheme = MaterialTheme.colorScheme
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(AccentRose.copy(alpha = 0.10f))
+            .background(colorScheme.error.copy(alpha = 0.10f))
             .padding(14.dp)
     ) {
-        Icon(Icons.Default.ErrorOutline, null, tint = AccentRose, modifier = Modifier.size(18.dp))
+        Icon(Icons.Default.ErrorOutline, null, tint = colorScheme.error, modifier = Modifier.size(18.dp))
         Spacer(modifier = Modifier.width(10.dp))
-        Text(msg, color = AccentRose, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        Text(msg, color = colorScheme.error, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }

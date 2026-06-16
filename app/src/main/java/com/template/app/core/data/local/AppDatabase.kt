@@ -31,7 +31,8 @@ import com.template.app.core.data.local.entities.*
         VelaBrightnessEntity::class,
         VelaResolutionEntity::class,
         VelaCpuUsageEntity::class,
-        VelaRamUsageEntity::class
+        VelaRamUsageEntity::class,
+        VelaClipboardEntity::class
     ],
     version = 5,
     exportSchema = true

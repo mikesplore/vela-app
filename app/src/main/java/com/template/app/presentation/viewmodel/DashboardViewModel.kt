@@ -15,8 +15,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
-import kotlin.math.ln
-import kotlin.math.pow
 
 data class DashboardState(
     val isConnected: Boolean = false,
@@ -53,14 +51,20 @@ class DashboardViewModel @Inject constructor(
 
     init {
         observeData()
-        startPolling()
         startUptimeTicking()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeData() {
+        // Observe all data streams from Room DB
         velaRepository.observeHealth()
-            .onEach { health -> _state.update { it.copy(health = health, uptimeSeconds = health?.uptimeSeconds ?: it.uptimeSeconds) } }
+            .onEach { health -> 
+                _state.update { it.copy(
+                    health = health, 
+                    uptimeSeconds = health?.uptimeSeconds ?: it.uptimeSeconds,
+                    isConnected = health != null
+                ) } 
+            }
             .launchIn(viewModelScope)
 
         velaRepository.observeNetwork()
@@ -69,10 +73,6 @@ class DashboardViewModel @Inject constructor(
 
         velaRepository.observeWifi()
             .onEach { wifi -> _state.update { it.copy(wifi = wifi) } }
-            .launchIn(viewModelScope)
-
-        velaRepository.observeResolution()
-            .onEach { res -> _state.update { it.copy(resolution = res) } }
             .launchIn(viewModelScope)
 
         velaRepository.observeAudio()
@@ -107,19 +107,14 @@ class DashboardViewModel @Inject constructor(
             .onEach { ram -> ram?.let { usage -> _state.update { it.copy(ramUsage = usage.percent) } } }
             .launchIn(viewModelScope)
 
+        velaRepository.observeClipboard()
+            .onEach { clip -> _state.update { it.copy(clipboardText = clip?.content ?: "") } }
+            .launchIn(viewModelScope)
+
         _processLimit
             .flatMapLatest { limit -> velaRepository.observeProcesses(limit) }
             .onEach { processes -> _state.update { it.copy(processes = processes) } }
             .launchIn(viewModelScope)
-    }
-
-    private fun startPolling() {
-        viewModelScope.launch {
-            while (true) {
-                refreshAllData()
-                delay(5000)
-            }
-        }
     }
 
     private fun startUptimeTicking() {
@@ -133,42 +128,13 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    fun refreshAllData() {
-        viewModelScope.launch {
-            _state.update { it.copy(isRefreshing = true) }
-            
-            val healthRes = velaRepository.getHealth()
-            velaRepository.getNetworkInfo()
-            velaRepository.getWifiStatus()
-            velaRepository.getResolution()
-            velaRepository.getNowPlaying()
-            velaRepository.getVolume()
-            velaRepository.getBrightness()
-            velaRepository.getProcesses()
-            velaRepository.getCpuUsage()
-            velaRepository.getRamUsage()
-            val activeWindowRes = velaRepository.getActiveWindow()
-            velaRepository.getDiskUsage()
-            val clipboardRes = velaRepository.readClipboard()
-
-            _state.update { 
-                it.copy(
-                    isRefreshing = false,
-                    isConnected = healthRes is Resource.Success,
-                    activeWindow = activeWindowRes.dataOrNull(),
-                    clipboardText = clipboardRes.dataOrNull() ?: it.clipboardText,
-                    error = (healthRes as? Resource.Error)?.message
-                )
-            }
-        }
-    }
-
     fun toggleProcessLimit() {
         val newLimit = if (_processLimit.value == 5) 50 else 5
         _processLimit.value = newLimit
         _state.update { it.copy(processLimit = newLimit) }
     }
 
+    // Actions still trigger network calls, which then update the DB
     fun setVolume(value: Int) {
         viewModelScope.launch { velaRepository.setVolume(value) }
     }
@@ -182,26 +148,11 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun togglePlayPause() {
-        viewModelScope.launch {
-            velaRepository.togglePlayPause()
-            velaRepository.getNowPlaying()
-        }
+        viewModelScope.launch { velaRepository.togglePlayPause() }
     }
 
     fun writeClipboard(text: String) {
-        viewModelScope.launch {
-            when (velaRepository.writeClipboard(text)) {
-                is Resource.Success -> _state.update { it.copy(clipboardText = text) }
-                else -> {}
-            }
-        }
-    }
-
-    fun logout(onComplete: () -> Unit) {
-        viewModelScope.launch {
-            clearSettingsUseCase()
-            onComplete()
-        }
+        viewModelScope.launch { velaRepository.writeClipboard(text) }
     }
 
     fun lockScreen() {
@@ -229,26 +180,20 @@ class DashboardViewModel @Inject constructor(
         _state.update { it.copy(screenshot = null) }
     }
 
-    fun formatBytes(bytesStr: String?): String {
-        if (bytesStr.isNullOrBlank()) return "0.0 B"
-
-        // 1. Clean the input string to isolate the first raw line/number block
-        val cleanInput = bytesStr.split("\n")
-            .firstOrNull()
-            ?.trim() ?: "0"
-
-        // 2. Safely parse it to a Long. If it fails, return the original fallback
-        val bytes = cleanInput.toLongOrNull() ?: return bytesStr
-        if (bytes < 1024) return "$bytes B"
-
-        // 3. Bitwise scaling calculation
-        val exp = (63 - java.lang.Long.numberOfLeadingZeros(bytes)) / 10
-        val units = arrayOf("KB", "MB", "GB", "TB", "PB")
-
-        // 4. Return a pristine formatted String with Locale safety
-        return String.format(Locale.ROOT, "%.1f %s", bytes.toDouble() / (1L shl (exp * 10)), units[exp - 1])
+    fun logout(onComplete: () -> Unit) {
+        viewModelScope.launch {
+            clearSettingsUseCase()
+            onComplete()
+        }
     }
 
-    private fun <T> Resource<T>.dataOrNull(): T? = (this as? Resource.Success)?.data
+    private fun formatBytes(bytesStr: String?): String {
+        if (bytesStr.isNullOrBlank()) return "0.0 B"
+        val cleanInput = bytesStr.split("\n").firstOrNull()?.trim() ?: "0"
+        val bytes = cleanInput.toLongOrNull() ?: return bytesStr
+        if (bytes < 1024) return "$bytes B"
+        val exp = (63 - java.lang.Long.numberOfLeadingZeros(bytes)) / 10
+        val units = arrayOf("KB", "MB", "GB", "TB", "PB")
+        return String.format(Locale.ROOT, "%.1f %s", bytes.toDouble() / (1L shl (exp * 10)), units[exp - 1])
+    }
 }
-

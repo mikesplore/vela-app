@@ -23,19 +23,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.template.app.presentation.viewmodel.ClipboardViewModel
 
-// ─── Palette ──────────────────────────────────────────────────────────────────
-
-private val BgDeep       = Color(0xFF070A10)
-private val BgMid        = Color(0xFF0A0D14)
-private val AccentIndigo = Color(0xFF6C63FF)
-private val AccentCyan   = Color(0xFF00D9F5)
-private val AccentRose   = Color(0xFFF43F5E)
-private val TextPrimary  = Color(0xFFF0F4FF)
-private val TextMuted    = Color(0xFF8B95A8)
-private val CardBorder   = Color(0xFF1E2533)
-
-private val GradientAccent = Brush.horizontalGradient(listOf(AccentIndigo, AccentCyan))
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClipboardScreen(
@@ -44,9 +31,10 @@ fun ClipboardScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var inputText by remember { mutableStateOf("") }
     val clipboardManager = LocalClipboardManager.current
+    val colorScheme = MaterialTheme.colorScheme
 
     Scaffold(
-        containerColor = BgDeep,
+        containerColor = colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -55,17 +43,17 @@ fun ClipboardScreen(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 2.sp,
                         fontSize = 18.sp,
-                        color = TextPrimary
+                        color = colorScheme.onSurface
                     )
                 },
                 actions = {
                     IconButton(onClick = { viewModel.refresh() }) {
-                        Icon(Icons.Default.Refresh, "Refresh", tint = AccentCyan)
+                        Icon(Icons.Default.Refresh, "Refresh", tint = colorScheme.secondary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgDeep,
-                    scrolledContainerColor = BgDeep
+                    containerColor = colorScheme.background,
+                    scrolledContainerColor = colorScheme.background
                 )
             )
         }
@@ -86,19 +74,18 @@ fun ClipboardScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(BgMid)
                         .padding(16.dp)
                 ) {
                     if (state.isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp).align(Alignment.Center),
-                            color = AccentCyan,
+                            color = colorScheme.secondary,
                             strokeWidth = 2.dp
                         )
                     } else {
                         Text(
-                            text = if (state.content.isBlank()) "Clipboard is empty" else state.content,
-                            color = if (state.content.isBlank()) TextMuted else TextPrimary,
+                            text = state.content.ifBlank { "Clipboard is empty" },
+                            color = if (state.content.isBlank()) colorScheme.onSurfaceVariant else colorScheme.onSurface,
                             fontSize = 15.sp,
                             minLines = 3
                         )
@@ -115,7 +102,7 @@ fun ClipboardScreen(
                         onClick = { clipboardManager.setText(AnnotatedString(state.content)) },
                         enabled = state.content.isNotBlank(),
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = CardBorder),
+                        colors = ButtonDefaults.buttonColors(containerColor = colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Icon(Icons.Default.ContentCopy, null, modifier = Modifier.size(18.dp))
@@ -127,9 +114,9 @@ fun ClipboardScreen(
                         onClick = { viewModel.clearClipboard() },
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .background(AccentRose.copy(alpha = 0.1f))
+                            .background(colorScheme.error.copy(alpha = 0.1f))
                     ) {
-                        Icon(Icons.Default.DeleteSweep, null, tint = AccentRose)
+                        Icon(Icons.Default.DeleteSweep, null, tint = colorScheme.error)
                     }
                 }
             }
@@ -140,15 +127,15 @@ fun ClipboardScreen(
                     value = inputText,
                     onValueChange = { inputText = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Enter text to sync...", color = TextMuted) },
+                    placeholder = { Text("Enter text to sync...", color = colorScheme.onSurfaceVariant) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary,
-                        cursorColor = AccentCyan,
-                        focusedBorderColor = AccentIndigo,
-                        unfocusedBorderColor = CardBorder,
-                        focusedContainerColor = BgMid,
-                        unfocusedContainerColor = BgMid
+                        focusedTextColor = colorScheme.onSurface,
+                        unfocusedTextColor = colorScheme.onSurface,
+                        cursorColor = colorScheme.secondary,
+                        focusedBorderColor = colorScheme.primary,
+                        unfocusedBorderColor = colorScheme.outline,
+                        focusedContainerColor = colorScheme.surface,
+                        unfocusedContainerColor = colorScheme.surface
                     ),
                     shape = RoundedCornerShape(12.dp),
                     minLines = 4
@@ -170,12 +157,12 @@ fun ClipboardScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(GradientAccent)
+                            .background(colorScheme.onSurfaceVariant)
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         if (state.isUpdating) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = colorScheme.onPrimary, strokeWidth = 2.dp)
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Send, null, modifier = Modifier.size(18.dp))
@@ -201,18 +188,19 @@ private fun VelaCard(
     title: String,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(BgMid)
+            .background(colorScheme.surface)
             .padding(20.dp)
     ) {
         Text(
             text = title,
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
-            color = AccentCyan,
+            color = colorScheme.secondary,
             letterSpacing = 1.sp
         )
         Spacer(modifier = Modifier.height(16.dp))
