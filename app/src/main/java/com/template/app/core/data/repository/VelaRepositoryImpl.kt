@@ -9,6 +9,7 @@ import com.template.app.core.data.remote.dto.*
 import com.template.app.core.utils.Resource
 import com.template.app.core.utils.safeApiCall
 import com.template.app.domain.model.*
+import com.template.app.domain.model.VelaConfig
 import com.template.app.domain.repository.VelaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -76,6 +77,9 @@ class VelaRepositoryImpl @Inject constructor(
 
     override fun observeFiles(path: String): Flow<List<VelaFileInfo>> =
         velaDao.observeFiles(normalizePath(path)).map { list -> list.map { it.toDomain() } }
+
+    override fun observeConfig(): Flow<VelaConfig?> =
+        velaDao.observeConfig().map { it?.toDomain() }
 
     // --- Actions & Refreshing ---
 
@@ -294,6 +298,21 @@ class VelaRepositoryImpl @Inject constructor(
     }
 
     // --- Filesystem ---
+
+    override suspend fun getConfig(): Resource<VelaConfig> = safeApiCall {
+        val response = apiService.getConfig()
+        val domain = VelaConfig(
+            homeDirectory = response.homeDirectory,
+            username = response.username
+        )
+        velaDao.upsertConfig(VelaConfigEntity.fromDomain(domain))
+        domain
+    }
+
+    override suspend fun setConfig(config: VelaConfig): Resource<Unit> = safeApiCall {
+        velaDao.upsertConfig(VelaConfigEntity.fromDomain(config))
+        Unit
+    }
 
     override suspend fun listFiles(path: String?, showHidden: Boolean): Resource<VelaFileList> = safeApiCall {
         val normalizedReqPath = normalizePath(path ?: "")

@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.template.app.presentation.ui.components.DataRow
+import com.template.app.presentation.ui.components.SectionHeader
 import com.template.app.presentation.viewmodel.DisplayViewModel
 import com.template.app.presentation.ui.theme.DarkWarning
 import com.template.app.presentation.ui.theme.LightWarning
@@ -106,7 +108,8 @@ fun DisplayScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Brightness
-            SectionLabel("Brightness")
+            SectionHeader("Brightness")
+            Spacer(modifier = Modifier.height(10.dp))
             BrightnessSlider(
                 value = state.brightness,
                 onValueChange = { viewModel.setBrightness(it) }
@@ -115,14 +118,16 @@ fun DisplayScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 22.dp), color = colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // Resolution
-            SectionLabel("Resolution")
+            SectionHeader("Resolution")
+            Spacer(modifier = Modifier.height(10.dp))
             DataRow("Current", state.resolution?.let { "${it.width}×${it.height} @ ${it.refresh} Hz" } ?: "Unknown")
             DataRow("Output", state.resolution?.output ?: "Unknown")
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 22.dp), color = colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // Rotation
-            SectionLabel("Rotation")
+            SectionHeader("Rotation")
+            Spacer(modifier = Modifier.height(10.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -140,7 +145,8 @@ fun DisplayScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 22.dp), color = colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // Night Light
-            SectionLabel("Night light")
+            SectionHeader("Night light")
+            Spacer(modifier = Modifier.height(10.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -177,7 +183,8 @@ fun DisplayScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 22.dp), color = colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // Power & Lock
-            SectionLabel("Power & lock")
+            SectionHeader("Power & lock")
+            Spacer(modifier = Modifier.height(10.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -210,30 +217,6 @@ fun DisplayScreen(
     }
 }
 
-//@Composable
-//private fun SectionLabel(label: String) {
-//    Text(
-//        text = label.uppercase(),
-//        fontSize = 11.sp,
-//        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-//        letterSpacing = 0.8.sp,
-//        modifier = Modifier.padding(bottom = 14.dp)
-//    )
-//}
-
-@Composable
-private fun DataRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
-        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
-    }
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
-}
 
 @Composable
 private fun BrightnessSlider(

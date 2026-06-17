@@ -8,6 +8,7 @@ import com.template.app.domain.model.VelaBreadcrumb
 import com.template.app.domain.model.VelaDiskUsage
 import com.template.app.domain.model.VelaFileInfo
 import com.template.app.domain.repository.VelaRepository
+import com.template.app.domain.usecase.ObserveVelaConfigUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -26,12 +27,14 @@ data class FilesState(
     val isUploading: Boolean = false,
     val isPerformingAction: Boolean = false,
     val showHidden: Boolean = false,
-    val breadcrumbs: List<VelaBreadcrumb> = emptyList()
+    val breadcrumbs: List<VelaBreadcrumb> = emptyList(),
+    val isRefreshing: Boolean = false,
 )
 
 @HiltViewModel
 class FilesViewModel @Inject constructor(
-    private val repository: VelaRepository
+    private val repository: VelaRepository,
+    private val observeVelaConfigUseCase: ObserveVelaConfigUseCase
 ) : ViewModel() {
 
     private val _currentPath = MutableStateFlow<String?>(null)
@@ -45,6 +48,19 @@ class FilesViewModel @Inject constructor(
         repository.observeDisks()
             .onEach { disks -> _state.update { it.copy(disks = disks) } }
             .launchIn(viewModelScope)
+
+        // 2. Load initial path from saved Config
+        viewModelScope.launch {
+            // We take(1) because we usually only want to set the initial path once
+            // when the screen opens.
+            observeVelaConfigUseCase()
+                .filterNotNull()
+                .firstOrNull()?.let { config ->
+                    if (_currentPath.value == null) {
+                        loadFiles(config.homeDirectory)
+                    }
+                }
+        }
 
         @OptIn(ExperimentalCoroutinesApi::class)
         _currentPath
@@ -63,12 +79,18 @@ class FilesViewModel @Inject constructor(
 
     fun loadFiles(path: String?, showHidden: Boolean = _state.value.showHidden) {
         val requestedPath = path ?: ""
-        
-        // Step 1: Set the loading state but don't switch the observer yet 
-        // if we are already observing this path (to prevent flickering)
-        _state.update { it.copy(isLoading = true, error = null) }
-        
-        // Step 2: Update the observer to the new target path immediately to show cache
+
+        // Check if we already have files for this path to decide which spinner to show
+        val isFirstLoad = _state.value.files.isEmpty() || requestedPath != _currentPath.value
+
+        _state.update {
+            it.copy(
+                isLoading = isFirstLoad,
+                isRefreshing = !isFirstLoad,
+                error = null
+            )
+        }
+
         _currentPath.value = requestedPath
 
         viewModelScope.launch {
@@ -76,9 +98,9 @@ class FilesViewModel @Inject constructor(
             if (result is Resource.Success) {
                 val data = result.data
                 val actualPath = data.currentPath
-                
+
                 // Step 3: Sync internal state with the ACTUAL path returned by the server
-                // This ensures that if the server redirects us (e.g. following a symlink), 
+                // This ensures that if the server redirects us (e.g. following a symlink),
                 // our observer and UI stay in sync.
                 if (actualPath != _currentPath.value) {
                     _currentPath.value = actualPath
@@ -89,12 +111,12 @@ class FilesViewModel @Inject constructor(
                     parentPath = data.parentPath,
                     showHidden = data.showHidden
                 ) }
-                
+
                 updateBreadcrumbs(actualPath)
             } else if (result is Resource.Error) {
                 _state.update { it.copy(error = result.message) }
             }
-            _state.update { it.copy(isLoading = false) }
+            _state.update { it.copy(isLoading = false, isRefreshing = false) }
         }
     }
 
@@ -234,4 +256,21 @@ class FilesViewModel @Inject constructor(
             _state.update { it.copy(isPerformingAction = false) }
         }
     }
+
+//    private fun fetchFiles(){
+//        viewModelScope.launch {
+//            val result = repository.getConfig()
+//            if (result is Resource.Success) {
+//                val config = result.data
+//                // Store home directory and greet the user
+//                _state.update { it.copy(username = config.username) }
+//
+//                // 2. Load files using the retrieved home directory
+//                loadFiles(config.home_directory)
+//            } else {
+//                // Fallback if config fails
+//                loadFiles(null)
+//            }
+//        }
+//    }
 }

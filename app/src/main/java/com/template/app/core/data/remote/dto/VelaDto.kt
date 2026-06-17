@@ -544,3 +544,10 @@ data class ServicesResponse(
 data class ServiceActionRequest(
     val name: String
 )
+
+@JsonClass(generateAdapter = true)
+
+data class VelaConfig(
+    @Json(name = "home_directory") val homeDirectory: String,
+    val username: String,
+)

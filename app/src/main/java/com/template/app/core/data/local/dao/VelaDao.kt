@@ -193,4 +193,10 @@ interface VelaDao {
             upsertFiles(files)
         }
     }
+
+    @Query("SELECT * FROM vela_config WHERE id = 0")
+    fun observeConfig(): Flow<VelaConfigEntity?>
+
+    @Upsert
+    suspend fun upsertConfig(config: VelaConfigEntity)
 }

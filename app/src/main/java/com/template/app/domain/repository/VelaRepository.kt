@@ -24,6 +24,8 @@ interface VelaRepository {
     fun observeActiveWindow(): Flow<String?>
     fun observeScheduledTasks(): Flow<List<VelaScheduledTask>>
     fun observeFiles(path: String): Flow<List<VelaFileInfo>>
+    fun observeConfig(): Flow<VelaConfig?>
+
 
     // General
     suspend fun getHealth(): Resource<VelaHealth>
@@ -73,6 +75,11 @@ interface VelaRepository {
     suspend fun zipFiles(paths: List<String>, output: String): Resource<Unit>
     suspend fun unzipFile(path: String, destination: String): Resource<Unit>
     suspend fun openFile(path: String): Resource<Unit>
+
+    // Config
+    suspend fun getConfig(): Resource<VelaConfig>
+    suspend fun setConfig(config: VelaConfig): Resource<Unit>
+
     
     // Network
     suspend fun getNetworkInfo(): Resource<VelaNetworkInfo>

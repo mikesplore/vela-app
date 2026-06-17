@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.template.app.domain.model.AppThemeMode
+import com.template.app.presentation.ui.components.SectionHeader
 import com.template.app.presentation.viewmodel.SettingsViewModel
 import com.template.app.presentation.viewmodel.TestResult
 
@@ -202,18 +203,6 @@ fun SettingsScreen(
         
         Spacer(modifier = Modifier.height(24.dp))
     }
-}
-
-@Composable
-fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        fontSize = 11.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-        letterSpacing = 0.07.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(bottom = 14.dp)
-    )
 }
 
 @Composable

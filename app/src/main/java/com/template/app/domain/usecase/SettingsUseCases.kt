@@ -2,7 +2,10 @@ package com.template.app.domain.usecase
 
 import com.template.app.domain.model.AppThemeMode
 import com.template.app.domain.model.ConnectionSettings
+import com.template.app.domain.model.VelaConfig
 import com.template.app.domain.repository.SettingsRepository
+import com.template.app.domain.repository.VelaRepository
+import com.template.app.core.utils.Resource
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -34,6 +37,18 @@ class SaveSettingsUseCase @Inject constructor(
         val current = repository.getSettings()
         repository.saveSettings(current.copy(themeMode = themeMode))
     }
+}
+
+class FetchVelaConfigUseCase @Inject constructor(
+    private val velaRepository: VelaRepository
+) {
+    suspend operator fun invoke(): Resource<VelaConfig> = velaRepository.getConfig()
+}
+
+class ObserveVelaConfigUseCase @Inject constructor(
+    private val velaRepository: VelaRepository
+) {
+    operator fun invoke(): Flow<VelaConfig?> = velaRepository.observeConfig()
 }
 
 class CompleteOnboardingUseCase @Inject constructor(

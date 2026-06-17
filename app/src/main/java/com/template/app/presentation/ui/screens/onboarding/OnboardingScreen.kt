@@ -49,6 +49,7 @@ fun OnboardingScreen(
     val apiToken by viewModel.apiToken.collectAsStateWithLifecycle()
     val showPassword by viewModel.showPassword.collectAsStateWithLifecycle()
     val testState by viewModel.testState.collectAsStateWithLifecycle()
+    val username by viewModel.username.collectAsStateWithLifecycle()
 
     // Tech gradient layout matching the Vela control theme
     val gradientBg = Brush.verticalGradient(
@@ -103,7 +104,7 @@ fun OnboardingScreen(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.padding(bottom = 32.dp)
                 ) {
-                    repeat(3) { step ->
+                    repeat(4) { step ->
                         val isActive = step == currentPage
                         val animatedWidth by animateDpAsState(
                             targetValue = if (isActive) 32.dp else 12.dp,
@@ -158,9 +159,15 @@ fun OnboardingScreen(
                             onTestConnection = viewModel::testConnection,
                             onSkipOnboarding = {
                                 viewModel.completeOnboarding(isDemo = true)
-                                onOnboardingComplete()
+                                viewModel.nextPage() // Move to greeting
                             },
                             onContinue = {
+                                viewModel.nextPage() // Move to greeting
+                            }
+                        )
+                        3 -> OnboardingStepGreeting(
+                            username = "${username?.replaceFirstChar { it.uppercase() }}",
+                            onFinish = {
                                 viewModel.completeOnboarding(isDemo = false)
                                 onOnboardingComplete()
                             }

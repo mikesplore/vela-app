@@ -3,6 +3,7 @@ package com.template.app.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.template.app.core.utils.Resource
+import com.template.app.domain.model.VelaConfig
 import com.template.app.domain.repository.VelaRepository
 import com.template.app.domain.usecase.CompleteOnboardingUseCase
 import com.template.app.domain.usecase.GetSettingsUseCase
@@ -36,10 +37,13 @@ class OnboardingViewModel @Inject constructor(
     private val _testState = MutableStateFlow<TestResult>(TestResult.Idle)
     val testState = _testState.asStateFlow()
 
+    private val _username = MutableStateFlow<String?>(null)
+    val username = _username.asStateFlow()
+
     sealed interface TestResult {
         object Idle : TestResult
         object Testing : TestResult
-        data class Success(val uptime: String) : TestResult
+        data class Success(val username: String) : TestResult
         data class Error(val message: String) : TestResult
     }
 
@@ -53,7 +57,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun nextPage() {
-        if (_currentPage.value < 2) {
+        if (_currentPage.value < 3) {
             _currentPage.value++
             _testState.value = TestResult.Idle
         }
@@ -93,10 +97,13 @@ class OnboardingViewModel @Inject constructor(
             // uses the dynamic interceptor which reads from DB
             saveSettingsUseCase(urlInput, _apiToken.value.trim())
             
-            when (val result = velaRepository.getHealth()) {
+            // Instead of health, check config to get username and home directory
+            when (val result = velaRepository.getConfig()) {
                 is Resource.Success -> {
-                    val uptimeFormatted = formatUptime(result.data.uptimeSeconds)
-                    _testState.value = TestResult.Success(uptimeFormatted)
+                    val config = result.data
+                    _username.value = config.username
+                    _testState.value = TestResult.Success(config.username)
+                    // Config is already saved to persistence by VelaRepositoryImpl.getConfig()
                 }
                 is Resource.Error -> {
                     _testState.value = TestResult.Error(result.message)
@@ -110,21 +117,12 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             if (isDemo) {
                 saveSettingsUseCase("http://demo.vela-agent.local", "demo_secret")
+                // In demo mode we might want to set a default config if server call isn't made
+                velaRepository.setConfig(VelaConfig("/home/demo", "Demo User"))
             } else {
                 saveSettingsUseCase(_baseUrl.value.trim(), _apiToken.value.trim())
             }
             completeOnboardingUseCase()
-        }
-    }
-
-    private fun formatUptime(seconds: Long): String {
-        val hrs = seconds / 3600
-        val mins = (seconds % 3600) / 60
-        val secs = seconds % 60
-        return when {
-            hrs > 0 -> "${hrs}h ${mins}m ${secs}s"
-            mins > 0 -> "${mins}m ${secs}s"
-            else -> "${secs}s"
         }
     }
 }

@@ -276,6 +276,7 @@ data class VelaScheduledTaskEntity(
     }
 }
 
+
 @Entity(tableName = "vela_files")
 data class VelaFileEntity(
     @PrimaryKey val path: String,
@@ -313,5 +314,17 @@ data class VelaFileEntity(
             childrenCount = domain.childrenCount,
             extension = domain.extension
         )
+    }
+}
+
+@Entity("vela_config")
+data class VelaConfigEntity(
+    @PrimaryKey val id: Int = 0,
+    val homeDirectory: String,
+    val username: String
+) {
+    fun toDomain() = VelaConfig(homeDirectory, username)
+    companion object {
+        fun fromDomain(domain: VelaConfig) = VelaConfigEntity(id = 0, homeDirectory = domain.homeDirectory, username = domain.username)
     }
 }

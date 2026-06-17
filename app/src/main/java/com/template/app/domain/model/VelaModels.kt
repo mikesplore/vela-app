@@ -185,3 +185,8 @@ data class VelaLogs(
     val service: String,
     val lines: List<String>
 )
+
+data class VelaConfig(
+    val homeDirectory: String,
+    val username: String
+)

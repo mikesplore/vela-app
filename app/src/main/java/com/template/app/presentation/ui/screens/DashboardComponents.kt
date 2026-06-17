@@ -29,14 +29,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.template.app.domain.model.*
+import com.template.app.presentation.ui.components.DataRow
+import com.template.app.presentation.ui.components.SectionHeader
+import com.template.app.presentation.ui.components.ThinBar
+import com.template.app.presentation.ui.components.rowDivider
 import com.template.app.presentation.ui.theme.DarkSuccess
 import java.util.Locale
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
-private val CardShape       = RoundedCornerShape(16.dp)
-private val InnerShape      = RoundedCornerShape(10.dp)
-private val BarHeight       = 3.dp
 private val CardPadding     = 20.dp
 private val SectionSpacing  = 20.dp
 
@@ -70,84 +71,6 @@ private fun VelaCard(
     )
 }
 
-// ─── Section header ───────────────────────────────────────────────────────────
-
-@Composable
-private fun VelaSectionHeader(label: String) {
-    Text(
-        text = label,
-        fontSize = 18.sp,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.6.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-    )
-}
-
-// ─── Thin progress bar ────────────────────────────────────────────────────────
-
-@Composable
-private fun ThinBar(
-    progress: Float,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    val cs = MaterialTheme.colorScheme
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(BarHeight)
-            .clip(CircleShape)
-            .background(cs.surfaceVariant)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(progress.coerceIn(0f, 1f))
-                .fillMaxHeight()
-                .clip(CircleShape)
-                .background(color)
-        )
-    }
-}
-
-// ─── Key-value row ────────────────────────────────────────────────────────────
-
-@Composable
-private fun DataRow(
-    label: String,
-    value: String,
-    valueColor: Color = MaterialTheme.colorScheme.onSurface,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 7.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            fontSize = 16.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = value,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            color = valueColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.End
-        )
-    }
-}
-
-private fun rowDivider(cs: ColorScheme) = Modifier
-    .fillMaxWidth()
-    .height(0.5.dp)
-    .background(cs.outlineVariant.copy(alpha = 0.3f))
-
-
 // ─── StatusCard ───────────────────────────────────────────────────────────────
 
 @Composable
@@ -159,7 +82,7 @@ fun StatusCard(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            VelaSectionHeader("System uptime")
+            SectionHeader("System uptime")
             Spacer(Modifier.height(8.dp))
             Text(
                 text = formatUptime(health.uptimeSeconds),
@@ -180,7 +103,7 @@ fun NetworkCard(network: VelaNetworkInfo, wifi: VelaWifiStatus?) {
     val cs = MaterialTheme.colorScheme
 
     VelaCard {
-        VelaSectionHeader("Network")
+        SectionHeader("Network")
         Spacer(Modifier.height(SectionSpacing))
 
         DataRow("SSID", wifi?.ssid ?: "—")
@@ -212,7 +135,7 @@ fun SystemResolutionCard(resolution: VelaResolution?) {
     val cs = MaterialTheme.colorScheme
 
     VelaCard {
-        VelaSectionHeader("Display")
+        SectionHeader("Display")
         Spacer(Modifier.height(SectionSpacing))
         DataRow("Resolution", "${resolution.width}×${resolution.height}")
         Box(Modifier.then(rowDivider(cs)))
@@ -308,7 +231,7 @@ fun ProcessSummaryCard(
     val cs = MaterialTheme.colorScheme
 
     VelaCard {
-        VelaSectionHeader("Resources")
+        SectionHeader("Resources")
         Spacer(Modifier.height(SectionSpacing))
 
         Row(
@@ -400,7 +323,7 @@ fun AudioControlCard(
     val isMuted = audioState.muted
 
     VelaCard {
-        VelaSectionHeader("Audio")
+        SectionHeader("Audio")
         Spacer(Modifier.height(SectionSpacing))
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
@@ -454,7 +377,7 @@ fun BrightnessControlCard(
     var sliderValue by remember(brightness) { mutableFloatStateOf(brightness.toFloat()) }
 
     VelaCard {
-        VelaSectionHeader("Brightness")
+        SectionHeader("Brightness")
         Spacer(Modifier.height(SectionSpacing))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
@@ -496,7 +419,7 @@ fun DiskUsageCard(disks: List<VelaDiskUsage>) {
     val cs = MaterialTheme.colorScheme
 
     VelaCard {
-        VelaSectionHeader("Storage")
+        SectionHeader("Storage")
         Spacer(Modifier.height(SectionSpacing))
 
         disks.forEachIndexed { index, disk ->
@@ -550,7 +473,7 @@ fun MediaBar(
     val cs = MaterialTheme.colorScheme
 
     VelaCard {
-        VelaSectionHeader("Current Song")
+        SectionHeader("Current Song")
         Spacer(Modifier.height(SectionSpacing))
         Row(
             modifier = Modifier.fillMaxWidth(),
