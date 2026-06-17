@@ -1,5 +1,6 @@
 package com.template.app.core.network
 
+import android.util.Log
 import com.squareup.moshi.Moshi
 import com.template.app.core.data.remote.dto.ApiErrorResponse
 import com.template.app.core.utils.AppEventManager

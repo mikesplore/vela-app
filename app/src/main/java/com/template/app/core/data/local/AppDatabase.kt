@@ -38,7 +38,7 @@ import com.template.app.core.data.local.entities.*
         VelaScheduledTaskEntity::class,
         VelaFileEntity::class
     ],
-    version = 13,
+    version = 15,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

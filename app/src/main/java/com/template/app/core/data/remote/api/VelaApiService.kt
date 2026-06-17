@@ -21,7 +21,7 @@ interface VelaApiService {
 
     // ── Display ───────────────────────────────────────────────────────────────
 
-    @GET("display/screenshot")
+    @GET("display/screenshott")
     suspend fun getScreenshot(): ScreenshotResponse
 
     @POST("display/record")
@@ -129,7 +129,7 @@ interface VelaApiService {
         @Part file: MultipartBody.Part
     ): GenericResponse
 
-    @DELETE("fs/delete")
+    @HTTP(method = "DELETE", path = "fs/delete", hasBody = true)
     suspend fun deleteFile(@Body body: FilePathRequest): GenericResponse
 
     @POST("fs/mkdir")

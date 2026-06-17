@@ -1,5 +1,6 @@
 package com.template.app.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.template.app.core.utils.Resource
@@ -47,33 +48,49 @@ class FilesViewModel @Inject constructor(
 
         @OptIn(ExperimentalCoroutinesApi::class)
         _currentPath
-            .flatMapLatest { path -> repository.observeFiles(path ?: "") }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .flatMapLatest { path -> 
+                Log.d("FilesViewModel", "Observing path: $path")
+                repository.observeFiles(path) 
+            }
             .onEach { files -> 
+                Log.d("FilesViewModel", "Observer emitted ${files.size} files for current path")
                 _state.update { it.copy(files = files) } 
             }
             .launchIn(viewModelScope)
-
-        // Initial load with null path to get the default/home directory
-        loadFiles(null)
     }
 
     fun loadFiles(path: String?, showHidden: Boolean = _state.value.showHidden) {
-        _currentPath.value = path
-        _state.update { it.copy(currentPath = path ?: "", isLoading = true, error = null, showHidden = showHidden) }
+        val requestedPath = path ?: ""
+        
+        // Step 1: Set the loading state but don't switch the observer yet 
+        // if we are already observing this path (to prevent flickering)
+        _state.update { it.copy(isLoading = true, error = null) }
+        
+        // Step 2: Update the observer to the new target path immediately to show cache
+        _currentPath.value = requestedPath
+
         viewModelScope.launch {
             val result = repository.listFiles(path, showHidden)
             if (result is Resource.Success) {
                 val data = result.data
+                val actualPath = data.currentPath
+                
+                // Step 3: Sync internal state with the ACTUAL path returned by the server
+                // This ensures that if the server redirects us (e.g. following a symlink), 
+                // our observer and UI stay in sync.
+                if (actualPath != _currentPath.value) {
+                    _currentPath.value = actualPath
+                }
+
                 _state.update { it.copy(
-                    currentPath = data?.currentPath ?: path ?: "",
-                    parentPath = data?.parentPath,
-                    files = data?.files ?: emptyList(),
-                    showHidden = data?.showHidden ?: showHidden
+                    currentPath = actualPath,
+                    parentPath = data.parentPath,
+                    showHidden = data.showHidden
                 ) }
                 
-                // Also fetch tree for breadcrumbs if needed, or we can just derive them from path for now
-                // Alternatively, call getFileTree for breadcrumbs
-                updateBreadcrumbs(data?.currentPath ?: path ?: "")
+                updateBreadcrumbs(actualPath)
             } else if (result is Resource.Error) {
                 _state.update { it.copy(error = result.message) }
             }
@@ -88,7 +105,7 @@ class FilesViewModel @Inject constructor(
         }
         val result = repository.getFileTree(path, maxDepth = 1)
         if (result is Resource.Success) {
-            _state.update { it.copy(breadcrumbs = result.data?.breadcrumbs ?: emptyList()) }
+            _state.update { it.copy(breadcrumbs = result.data.breadcrumbs) }
         }
     }
 
@@ -107,7 +124,6 @@ class FilesViewModel @Inject constructor(
         if (parent != null) {
             loadFiles(parent)
         } else {
-            // Fallback to manual parent calculation if parentPath is null
             val current = _state.value.currentPath
             if (current.isNotBlank() && current != "/") {
                 val manualParent = current.substringBeforeLast("/", "").ifBlank { "/" }
@@ -175,7 +191,7 @@ class FilesViewModel @Inject constructor(
             val result = repository.uploadFile(_state.value.currentPath, localFile)
             if (result is Resource.Success) {
                 loadFiles(_currentPath.value)
-                localFile.delete() // Clean up temp file
+                localFile.delete()
             } else if (result is Resource.Error) {
                 _state.update { it.copy(error = result.message) }
             }

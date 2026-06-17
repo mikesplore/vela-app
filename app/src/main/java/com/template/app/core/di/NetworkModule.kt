@@ -6,6 +6,7 @@ import com.template.app.BuildConfig
 import com.template.app.core.data.remote.api.UserApiService
 import com.template.app.core.data.remote.api.VelaApiService
 import com.template.app.core.network.AuthInterceptor
+import com.template.app.core.network.BooleanIntAdapter
 import com.template.app.core.network.ErrorInterceptor
 import com.template.app.core.network.VelaInterceptor
 import dagger.Module
@@ -35,6 +36,7 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideMoshi(): Moshi = Moshi.Builder()
+        .add(BooleanIntAdapter())
         .addLast(KotlinJsonAdapterFactory())
         .build()
 
@@ -114,4 +116,5 @@ object NetworkModule {
     @Singleton
     fun provideVelaApiService(@VelaRetrofit retrofit: Retrofit): VelaApiService =
         retrofit.create(VelaApiService::class.java)
+
 }

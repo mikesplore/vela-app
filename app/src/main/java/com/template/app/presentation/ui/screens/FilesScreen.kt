@@ -3,6 +3,7 @@ package com.template.app.presentation.ui.screens
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -13,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
@@ -23,6 +25,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +44,8 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.log10
+import kotlin.math.pow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,6 +73,10 @@ fun FilesScreen(
                 viewModel.uploadFile(tempFile)
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadFiles("/home/mike")
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -138,6 +148,7 @@ fun FilesScreen(
                 }
 
                 if (state.error != null && !state.isLoading) {
+                    Log.e("FilesScreen", "Error: ${state.error}")
                     item {
                         ErrorMessage(msg = state.error!!)
                     }
@@ -295,58 +306,60 @@ private fun SearchBar(
     onQueryChange: (String) -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    
-    Box(
+
+    // Removed the background, clip, and extra padding to make it transparent
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp), // Aligns with Breadcrumbs and File Items
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = null,
-                tint = colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                modifier = Modifier.fillMaxWidth(),
-                textStyle = LocalTextStyle.current.copy(
-                    color = colorScheme.onSurface,
-                    fontSize = 14.sp
-                ),
-                decorationBox = { innerTextField ->
-                    if (query.isEmpty()) {
-                        Text(
-                            text = "Search files in this folder...",
-                            fontSize = 14.sp,
-                            color = colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        )
-                    }
-                    innerTextField()
+        Icon(
+            imageVector = Icons.Default.Search,
+            contentDescription = null,
+            tint = colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            modifier = Modifier.size(20.dp)
+        )
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        BasicTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = LocalTextStyle.current.copy(
+                color = colorScheme.onSurface,
+                fontSize = 15.sp
+            ),
+            // Added cursor color to match theme
+            cursorBrush = SolidColor(colorScheme.primary),
+            decorationBox = { innerTextField ->
+                if (query.isEmpty()) {
+                    Text(
+                        text = "Search files...",
+                        fontSize = 15.sp,
+                        color = colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    )
                 }
-            )
-        }
+                innerTextField()
+            }
+        )
     }
 }
 
 @Composable
 private fun DiskUsageSection(disks: List<VelaDiskUsage>) {
     val colorScheme = MaterialTheme.colorScheme
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         shape = RoundedCornerShape(12.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
+          SectionHeader("Disk Usage")
             disks.forEachIndexed { index, disk ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -360,15 +373,15 @@ private fun DiskUsageSection(disks: List<VelaDiskUsage>) {
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = "${String.format("%.1f", disk.percent)}%",
+                        text = "${String.format(Locale.ROOT, "%.1f", disk.percent)}%",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (disk.percent > 85) colorScheme.error else if (disk.percent > 60) colorScheme.tertiary else colorScheme.primary
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(6.dp))
-                
+
                 // Progress Bar
                 Box(
                     modifier = Modifier
@@ -386,7 +399,7 @@ private fun DiskUsageSection(disks: List<VelaDiskUsage>) {
                             )
                     )
                 }
-                
+
                 if (index < disks.size - 1) {
                     Spacer(modifier = Modifier.height(10.dp))
                 }
@@ -666,8 +679,8 @@ private fun formatDate(timestamp: Long): String {
 private fun formatFileSize(size: Long): String {
     if (size <= 0) return "0 B"
     val units = arrayOf("B", "KB", "MB", "GB", "TB")
-    val digitGroups = (Math.log10(size.toDouble()) / Math.log10(1024.0)).toInt()
-    return String.format(Locale.ROOT, "%.1f %s", size / Math.pow(1024.0, digitGroups.toDouble()), units[digitGroups])
+    val digitGroups = (log10(size.toDouble()) / log10(1024.0)).toInt()
+    return String.format(Locale.ROOT, "%.1f %s", size / 1024.0.pow(digitGroups.toDouble()), units[digitGroups])
 }
 
 // BasicTextField helper for cleaner search bar

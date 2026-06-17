@@ -75,7 +75,7 @@ class VelaRepositoryImpl @Inject constructor(
         velaDao.observeScheduledTasks().map { list -> list.map { it.toDomain() } }
 
     override fun observeFiles(path: String): Flow<List<VelaFileInfo>> =
-        velaDao.observeFiles(path).map { list -> list.map { it.toDomain() } }
+        velaDao.observeFiles(normalizePath(path)).map { list -> list.map { it.toDomain() } }
 
     // --- Actions & Refreshing ---
 
@@ -296,27 +296,31 @@ class VelaRepositoryImpl @Inject constructor(
     // --- Filesystem ---
 
     override suspend fun listFiles(path: String?, showHidden: Boolean): Resource<VelaFileList> = safeApiCall {
-        val response = apiService.listFiles(path ?: "", showHidden)
+        val normalizedReqPath = normalizePath(path ?: "")
+        val response = apiService.listFiles(normalizedReqPath, showHidden)
         val fileDomains = response.files?.map { it.toDomain() } ?: emptyList()
         
+        val currentPath = normalizePath(response.currentPath ?: normalizedReqPath)
+        
         val domain = VelaFileList(
-            currentPath = response.currentPath ?: path ?: "",
-            parentPath = response.parentPath,
+            currentPath = currentPath,
+            parentPath = response.parentPath?.let { normalizePath(it) },
             totalItems = response.totalItems ?: fileDomains.size,
             showHidden = response.showHidden ?: showHidden,
             files = fileDomains
         )
         
-        velaDao.replaceFiles(domain.currentPath, fileDomains.map { VelaFileEntity.fromDomain(it, domain.currentPath) })
+        velaDao.replaceFiles(currentPath, fileDomains.map { VelaFileEntity.fromDomain(it, currentPath) })
         domain
     }
 
     override suspend fun getFileTree(path: String, maxDepth: Int, showHidden: Boolean): Resource<VelaFileTree> = safeApiCall {
-        val response = apiService.getTree(path, maxDepth, showHidden)
+        val normalizedPath = normalizePath(path)
+        val response = apiService.getTree(normalizedPath, maxDepth, showHidden)
         VelaFileTree(
-            root = response.root?.toDomain() ?: VelaFileInfo("", path, "directory", 0L, 0.0),
+            root = response.root?.toDomain() ?: VelaFileInfo("", normalizedPath, "directory", 0L, 0.0),
             children = response.children?.map { it.toDomain() } ?: emptyList(),
-            breadcrumbs = response.breadcrumbs?.map { VelaBreadcrumb(it.name ?: "", it.path ?: "") } ?: emptyList()
+            breadcrumbs = response.breadcrumbs?.map { VelaBreadcrumb(it.name ?: "", normalizePath(it.path ?: "")) } ?: emptyList()
         )
     }
 
@@ -724,7 +728,7 @@ class VelaRepositoryImpl @Inject constructor(
 
     private fun FileItem.toDomain() = VelaFileInfo(
         name = name ?: "",
-        path = path ?: "",
+        path = normalizePath(path ?: ""),
         type = type ?: "file",
         size = size ?: 0L,
         modified = modified ?: 0.0,
@@ -733,4 +737,10 @@ class VelaRepositoryImpl @Inject constructor(
         childrenCount = childrenCount,
         extension = extension
     )
+
+    private fun normalizePath(path: String): String {
+        if (path.isEmpty()) return ""
+        if (path == "/") return "/"
+        return path.removeSuffix("/")
+    }
 }

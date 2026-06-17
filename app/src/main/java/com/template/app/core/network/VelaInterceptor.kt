@@ -14,6 +14,7 @@ class VelaInterceptor @Inject constructor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val settings = runBlocking { settingsRepository.getSettings() }
         val originalRequest = chain.request()
+        val originalUrl = originalRequest.url
 
         if (settings.baseUrl.isBlank()) {
             return chain.proceed(originalRequest)
@@ -23,18 +24,20 @@ class VelaInterceptor @Inject constructor(
             if (it.startsWith("http")) it else "http://$it"
         }.toHttpUrlOrNull() ?: return chain.proceed(originalRequest)
 
-        // 1. Start with the Base URL from settings (including paths like /relay/my-laptop)
+        // 1. Start with the Base URL from settings
         val newUrlBuilder = settingsUrl.newBuilder()
         
-        // 2. Clear placeholder segments from the original request (usually just the endpoint name)
-        // and append them to the settings base path.
-        val originalSegments = originalRequest.url.pathSegments
+        // 2. Append original path segments (e.g., fs/list)
+        val originalSegments = originalUrl.pathSegments
         for (segment in originalSegments) {
-            // "localhost" or empty segments from the placeholder are ignored
             if (segment.isNotBlank()) {
                 newUrlBuilder.addPathSegment(segment)
             }
         }
+        
+        // 3. CRITICAL: Preserve ALL query parameters (like ?path=/home/mike)
+        // Without this, the server defaults to a fallback directory.
+        newUrlBuilder.encodedQuery(originalUrl.encodedQuery)
 
         val newRequest = originalRequest.newBuilder()
             .url(newUrlBuilder.build())
