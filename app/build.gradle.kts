@@ -24,6 +24,15 @@ android {
         buildConfigField("Boolean", "ENABLE_LOGGING", "true")
     }
 
+    signingConfigs {
+        create("externalOverride") {
+            keyAlias = "vela"
+            keyPassword = "mikemike"
+            storeFile = file("/home/mike/Documents/Vela.jks")
+            storePassword = "mikemike"
+        }
+    }
+
     buildTypes {
         debug {
             isDebuggable = true

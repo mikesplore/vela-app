@@ -109,7 +109,7 @@ fun MainScreen(onLogout: () -> Unit) {
             composable(Routes.PROCESSES) { ProcessesScreen(onBack = { showSheet = true }) }
             composable(Routes.SECURITY) { SecurityScreen() }
             composable(Routes.SCHEDULER) { SchedulerScreen() }
-            composable(Routes.MAINTENANCE) { MaintenanceScreen() }
+            composable(Routes.MAINTENANCE) { MaintenanceScreen(onBack = {navController.popBackStack()}) }
             composable(Routes.NETWORK) { NetworkScreen() }
             composable(Routes.POWER) { 
                 PowerScreen(onBack = { navController.popBackStack() }) 

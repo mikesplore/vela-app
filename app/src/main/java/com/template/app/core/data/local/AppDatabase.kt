@@ -35,9 +35,10 @@ import com.template.app.core.data.local.entities.*
         VelaRamUsageEntity::class,
         VelaClipboardEntity::class,
         VelaActiveWindowEntity::class,
-        VelaScheduledTaskEntity::class
+        VelaScheduledTaskEntity::class,
+        VelaFileEntity::class
     ],
-    version = 11,
+    version = 13,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

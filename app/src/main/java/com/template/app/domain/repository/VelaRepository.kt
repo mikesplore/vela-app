@@ -3,6 +3,7 @@ package com.template.app.domain.repository
 import com.template.app.core.utils.Resource
 import com.template.app.domain.model.*
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 interface VelaRepository {
     // Observable streams (Offline-first)
@@ -22,6 +23,7 @@ interface VelaRepository {
     fun observeClipboard(): Flow<VelaClipboard?>
     fun observeActiveWindow(): Flow<String?>
     fun observeScheduledTasks(): Flow<List<VelaScheduledTask>>
+    fun observeFiles(path: String): Flow<List<VelaFileInfo>>
 
     // General
     suspend fun getHealth(): Resource<VelaHealth>
@@ -59,8 +61,18 @@ interface VelaRepository {
     suspend fun setPowerProfile(profile: String): Resource<Unit>
     
     // Filesystem
-    suspend fun listFiles(path: String): Resource<List<VelaFileInfo>>
+    suspend fun listFiles(path: String?, showHidden: Boolean = false): Resource<VelaFileList>
+    suspend fun getFileTree(path: String, maxDepth: Int = 1, showHidden: Boolean = false): Resource<VelaFileTree>
     suspend fun getDiskUsage(): Resource<List<VelaDiskUsage>>
+    suspend fun downloadFile(path: String, destination: File): Resource<File>
+    suspend fun uploadFile(path: String, file: File): Resource<Unit>
+    suspend fun deleteFile(path: String): Resource<Unit>
+    suspend fun makeDirectory(path: String): Resource<Unit>
+    suspend fun renameFile(from: String, to: String): Resource<Unit>
+    suspend fun searchFiles(query: String, path: String?): Resource<List<VelaFileInfo>>
+    suspend fun zipFiles(paths: List<String>, output: String): Resource<Unit>
+    suspend fun unzipFile(path: String, destination: String): Resource<Unit>
+    suspend fun openFile(path: String): Resource<Unit>
     
     // Network
     suspend fun getNetworkInfo(): Resource<VelaNetworkInfo>
@@ -105,4 +117,15 @@ interface VelaRepository {
     suspend fun createScheduledTask(command: String, runAt: String, recurring: String? = null): Resource<VelaScheduledTask>
     suspend fun cancelScheduledTask(taskId: String): Resource<Unit>
     suspend fun runTaskNow(taskId: String): Resource<Unit>
+
+    // Maintenance
+    suspend fun clearCache(): Resource<Unit>
+    suspend fun getLogs(service: String, lines: Int): Resource<VelaLogs>
+    suspend fun checkUpdates(): Resource<VelaMaintenanceUpdate>
+    suspend fun runUpdates(): Resource<Unit>
+    suspend fun syncTime(): Resource<Unit>
+    suspend fun getServices(): Resource<List<VelaService>>
+    suspend fun startService(name: String): Resource<Unit>
+    suspend fun stopService(name: String): Resource<Unit>
+    suspend fun restartService(name: String): Resource<Unit>
 }

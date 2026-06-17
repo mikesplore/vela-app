@@ -13,6 +13,11 @@ import com.template.app.domain.repository.VelaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
 import javax.inject.Inject
 
 class VelaRepositoryImpl @Inject constructor(
@@ -68,6 +73,9 @@ class VelaRepositoryImpl @Inject constructor(
 
     override fun observeScheduledTasks(): Flow<List<VelaScheduledTask>> =
         velaDao.observeScheduledTasks().map { list -> list.map { it.toDomain() } }
+
+    override fun observeFiles(path: String): Flow<List<VelaFileInfo>> =
+        velaDao.observeFiles(path).map { list -> list.map { it.toDomain() } }
 
     // --- Actions & Refreshing ---
 
@@ -285,16 +293,31 @@ class VelaRepositoryImpl @Inject constructor(
         Unit
     }
 
-    override suspend fun listFiles(path: String): Resource<List<VelaFileInfo>> = safeApiCall {
-        apiService.listFiles(path).files?.map {
-            VelaFileInfo(
-                name = it.name ?: "",
-                path = it.path ?: "",
-                type = it.type ?: "",
-                size = it.size ?: 0L,
-                modified = it.modified ?: 0L
-            )
-        } ?: emptyList()
+    // --- Filesystem ---
+
+    override suspend fun listFiles(path: String?, showHidden: Boolean): Resource<VelaFileList> = safeApiCall {
+        val response = apiService.listFiles(path ?: "", showHidden)
+        val fileDomains = response.files?.map { it.toDomain() } ?: emptyList()
+        
+        val domain = VelaFileList(
+            currentPath = response.currentPath ?: path ?: "",
+            parentPath = response.parentPath,
+            totalItems = response.totalItems ?: fileDomains.size,
+            showHidden = response.showHidden ?: showHidden,
+            files = fileDomains
+        )
+        
+        velaDao.replaceFiles(domain.currentPath, fileDomains.map { VelaFileEntity.fromDomain(it, domain.currentPath) })
+        domain
+    }
+
+    override suspend fun getFileTree(path: String, maxDepth: Int, showHidden: Boolean): Resource<VelaFileTree> = safeApiCall {
+        val response = apiService.getTree(path, maxDepth, showHidden)
+        VelaFileTree(
+            root = response.root?.toDomain() ?: VelaFileInfo("", path, "directory", 0L, 0.0),
+            children = response.children?.map { it.toDomain() } ?: emptyList(),
+            breadcrumbs = response.breadcrumbs?.map { VelaBreadcrumb(it.name ?: "", it.path ?: "") } ?: emptyList()
+        )
     }
 
     override suspend fun getDiskUsage(): Resource<List<VelaDiskUsage>> = safeApiCall {
@@ -310,6 +333,60 @@ class VelaRepositoryImpl @Inject constructor(
         velaDao.replaceDisks(domains.map { VelaDiskEntity.fromDomain(it) })
         domains
     }
+
+    override suspend fun downloadFile(path: String, destination: File): Resource<File> = safeApiCall {
+        val body = apiService.downloadFile(path)
+        body.byteStream().use { inputStream ->
+            destination.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+        destination
+    }
+
+    override suspend fun uploadFile(path: String, file: File): Resource<Unit> = safeApiCall {
+        val pathBody = path.toRequestBody("text/plain".toMediaTypeOrNull())
+        val fileBody = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
+        val multipart = MultipartBody.Part.createFormData("file", file.name, fileBody)
+        apiService.uploadFile(pathBody, multipart)
+        Unit
+    }
+
+    override suspend fun deleteFile(path: String): Resource<Unit> = safeApiCall {
+        apiService.deleteFile(FilePathRequest(path))
+        Unit
+    }
+
+    override suspend fun makeDirectory(path: String): Resource<Unit> = safeApiCall {
+        apiService.makeDirectory(FilePathRequest(path))
+        Unit
+    }
+
+    override suspend fun renameFile(from: String, to: String): Resource<Unit> = safeApiCall {
+        apiService.renameFile(FileRenameRequest(from, to))
+        Unit
+    }
+
+    override suspend fun searchFiles(query: String, path: String?): Resource<List<VelaFileInfo>> = safeApiCall {
+        apiService.searchFiles(query, path).files?.map { it.toDomain() } ?: emptyList()
+    }
+
+    override suspend fun zipFiles(paths: List<String>, output: String): Resource<Unit> = safeApiCall {
+        apiService.zipFiles(ZipRequest(paths, output))
+        Unit
+    }
+
+    override suspend fun unzipFile(path: String, destination: String): Resource<Unit> = safeApiCall {
+        apiService.unzipFile(UnzipRequest(path, destination))
+        Unit
+    }
+
+    override suspend fun openFile(path: String): Resource<Unit> = safeApiCall {
+        apiService.openFile(FilePathRequest(path))
+        Unit
+    }
+
+    // --- Network ---
 
     override suspend fun getNetworkInfo(): Resource<VelaNetworkInfo> = safeApiCall {
         val response = apiService.getNetworkIp()
@@ -511,20 +588,16 @@ class VelaRepositoryImpl @Inject constructor(
         domain
     }
 
-    // In VelaRepositoryImpl.kt
-
     override suspend fun getScheduledTasks(): Resource<List<VelaScheduledTask>> = safeApiCall {
         val response = apiService.listScheduledTasks()
-        val domains = response.jobs?.map {
+        val domains = response.jobs?.map { 
             VelaScheduledTask(
                 id = it.id ?: "",
                 command = it.command ?: "",
-                // Use runAt if nextRun is null as a fallback
                 nextRun = it.nextRun ?: it.runAt ?: "Unknown",
                 recurring = it.recurring
             )
         } ?: emptyList()
-
         velaDao.replaceScheduledTasks(domains.map { VelaScheduledTaskEntity.fromDomain(it) })
         domains
     }
@@ -553,6 +626,59 @@ class VelaRepositoryImpl @Inject constructor(
 
     override suspend fun runTaskNow(taskId: String): Resource<Unit> = safeApiCall {
         apiService.runTaskNow(taskId)
+        Unit
+    }
+
+    // --- Maintenance ---
+
+    override suspend fun clearCache(): Resource<Unit> = safeApiCall {
+        apiService.clearCache()
+        Unit
+    }
+
+    override suspend fun getLogs(service: String, lines: Int): Resource<VelaLogs> = safeApiCall {
+        val res = apiService.getLogs(service, lines)
+        VelaLogs(
+            service = res.service ?: service,
+            lines = res.lines ?: emptyList()
+        )
+    }
+
+    override suspend fun checkUpdates(): Resource<VelaMaintenanceUpdate> = safeApiCall {
+        val res = apiService.checkUpdates()
+        VelaMaintenanceUpdate(
+            updatesAvailable = res.updatesAvailable ?: false,
+            packages = res.packages?.map { VelaPackageUpdate(it.name ?: "Unknown", it.version ?: "Unknown") } ?: emptyList()
+        )
+    }
+
+    override suspend fun runUpdates(): Resource<Unit> = safeApiCall {
+        apiService.runUpdates()
+        Unit
+    }
+
+    override suspend fun syncTime(): Resource<Unit> = safeApiCall {
+        apiService.syncTime()
+        Unit
+    }
+
+    override suspend fun getServices(): Resource<List<VelaService>> = safeApiCall {
+        val res = apiService.getServices()
+        res.services?.map { VelaService(it.name ?: "Unknown", it.active ?: false) } ?: emptyList()
+    }
+
+    override suspend fun startService(name: String): Resource<Unit> = safeApiCall {
+        apiService.startService(ServiceActionRequest(name))
+        Unit
+    }
+
+    override suspend fun stopService(name: String): Resource<Unit> = safeApiCall {
+        apiService.stopService(ServiceActionRequest(name))
+        Unit
+    }
+
+    override suspend fun restartService(name: String): Resource<Unit> = safeApiCall {
+        apiService.restartService(ServiceActionRequest(name))
         Unit
     }
 
@@ -594,5 +720,17 @@ class VelaRepositoryImpl @Inject constructor(
         name = name ?: "Unknown",
         cpu = cpu ?: 0.0,
         mem = mem ?: 0.0
+    )
+
+    private fun FileItem.toDomain() = VelaFileInfo(
+        name = name ?: "",
+        path = path ?: "",
+        type = type ?: "file",
+        size = size ?: 0L,
+        modified = modified ?: 0.0,
+        isHidden = isHidden ?: false,
+        hasChildren = hasChildren ?: false,
+        childrenCount = childrenCount,
+        extension = extension
     )
 }

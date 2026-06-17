@@ -176,4 +176,21 @@ interface VelaDao {
             upsertScheduledTasks(tasks)
         }
     }
+
+    @Query("SELECT * FROM vela_files WHERE parentPath = :parentPath")
+    fun observeFiles(parentPath: String): Flow<List<VelaFileEntity>>
+
+    @Upsert
+    suspend fun upsertFiles(files: List<VelaFileEntity>)
+
+    @Query("DELETE FROM vela_files WHERE parentPath = :parentPath")
+    suspend fun clearFiles(parentPath: String)
+
+    @Transaction
+    suspend fun replaceFiles(parentPath: String, files: List<VelaFileEntity>) {
+        clearFiles(parentPath)
+        if (files.isNotEmpty()) {
+            upsertFiles(files)
+        }
+    }
 }

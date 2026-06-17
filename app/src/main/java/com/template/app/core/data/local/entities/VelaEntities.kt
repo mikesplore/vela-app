@@ -257,3 +257,61 @@ data class VelaActiveWindowEntity(
         fun fromTitle(title: String) = VelaActiveWindowEntity(id = 0, title = title)
     }
 }
+
+@Entity(tableName = "vela_scheduled_tasks")
+data class VelaScheduledTaskEntity(
+    @PrimaryKey val id: String,
+    val command: String,
+    val nextRun: String,
+    val recurring: String?
+) {
+    fun toDomain() = VelaScheduledTask(id, command, nextRun, recurring)
+    companion object {
+        fun fromDomain(domain: VelaScheduledTask) = VelaScheduledTaskEntity(
+            id = domain.id,
+            command = domain.command,
+            nextRun = domain.nextRun,
+            recurring = domain.recurring
+        )
+    }
+}
+
+@Entity(tableName = "vela_files")
+data class VelaFileEntity(
+    @PrimaryKey val path: String,
+    val parentPath: String,
+    val name: String,
+    val type: String,
+    val size: Long,
+    val modified: Double,
+    val isHidden: Boolean,
+    val hasChildren: Boolean,
+    val childrenCount: Int?,
+    val extension: String?
+) {
+    fun toDomain() = VelaFileInfo(
+        name = name, 
+        path = path, 
+        type = type, 
+        size = size, 
+        modified = modified,
+        isHidden = isHidden,
+        hasChildren = hasChildren,
+        childrenCount = childrenCount,
+        extension = extension
+    )
+    companion object {
+        fun fromDomain(domain: VelaFileInfo, parentPath: String) = VelaFileEntity(
+            path = domain.path,
+            parentPath = parentPath,
+            name = domain.name,
+            type = domain.type,
+            size = domain.size,
+            modified = domain.modified,
+            isHidden = domain.isHidden,
+            hasChildren = domain.hasChildren,
+            childrenCount = domain.childrenCount,
+            extension = domain.extension
+        )
+    }
+}

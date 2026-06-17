@@ -15,13 +15,7 @@ fun PlaceholderScreen(name: String) {
 }
 
 @Composable
-fun FilesScreen() = PlaceholderScreen("Files Screen")
-
-@Composable
 fun SecurityScreen() = PlaceholderScreen("Security Screen")
-
-@Composable
-fun MaintenanceScreen() = PlaceholderScreen("Maintenance Screen")
 
 @Composable
 fun InputControlScreen() = PlaceholderScreen("Input Control Screen")

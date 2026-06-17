@@ -127,7 +127,30 @@ data class VelaFileInfo(
     val path: String,
     val type: String,
     val size: Long,
-    val modified: Long
+    val modified: Double,
+    val isHidden: Boolean = false,
+    val hasChildren: Boolean = false,
+    val childrenCount: Int? = null,
+    val extension: String? = null
+)
+
+data class VelaFileList(
+    val currentPath: String,
+    val parentPath: String?,
+    val totalItems: Int,
+    val showHidden: Boolean,
+    val files: List<VelaFileInfo>
+)
+
+data class VelaBreadcrumb(
+    val name: String,
+    val path: String
+)
+
+data class VelaFileTree(
+    val root: VelaFileInfo,
+    val children: List<VelaFileInfo>,
+    val breadcrumbs: List<VelaBreadcrumb>
 )
 
 data class VelaClipboard(
@@ -139,4 +162,26 @@ data class VelaScheduledTask(
     val command: String,
     val nextRun: String,
     val recurring: String? = null
+)
+
+// --- Maintenance Models ---
+
+data class VelaMaintenanceUpdate(
+    val updatesAvailable: Boolean,
+    val packages: List<VelaPackageUpdate>
+)
+
+data class VelaPackageUpdate(
+    val name: String,
+    val version: String
+)
+
+data class VelaService(
+    val name: String,
+    val active: Boolean
+)
+
+data class VelaLogs(
+    val service: String,
+    val lines: List<String>
 )

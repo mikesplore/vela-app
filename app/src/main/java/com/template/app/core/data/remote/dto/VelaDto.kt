@@ -152,12 +152,33 @@ data class FileItem(
     val path: String? = null,
     val type: String? = null,
     val size: Long? = null,
-    val modified: Long? = null
+    val modified: Double? = null,
+    @Json(name = "is_hidden") val isHidden: Boolean? = null,
+    @Json(name = "has_children") val hasChildren: Boolean? = null,
+    @Json(name = "children_count") val childrenCount: Int? = null,
+    val extension: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class FileListResponse(
+    @Json(name = "current_path") val currentPath: String? = null,
+    @Json(name = "parent_path") val parentPath: String? = null,
+    @Json(name = "total_items") val totalItems: Int? = null,
+    @Json(name = "show_hidden") val showHidden: Boolean? = null,
     val files: List<FileItem>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class Breadcrumb(
+    val name: String? = null,
+    val path: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class FileTreeResponse(
+    val root: FileItem? = null,
+    val children: List<FileItem>? = null,
+    val breadcrumbs: List<Breadcrumb>? = null
 )
 
 @JsonClass(generateAdapter = true)

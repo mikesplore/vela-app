@@ -5,6 +5,7 @@ import com.template.app.core.data.remote.dto.ApiErrorResponse
 import com.template.app.core.utils.AppEventManager
 import okhttp3.Interceptor
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import java.io.IOException
 import javax.inject.Inject
 
@@ -46,7 +47,7 @@ class ErrorInterceptor @Inject constructor(
 
             // Re-create the response body since we've consumed it
             return response.newBuilder()
-                .body(okhttp3.ResponseBody.create(response.body?.contentType(), errorBody ?: ""))
+                .body((errorBody ?: "").toResponseBody(response.body?.contentType()))
                 .build()
         }
 

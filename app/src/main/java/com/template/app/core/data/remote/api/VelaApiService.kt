@@ -21,7 +21,7 @@ interface VelaApiService {
 
     // ── Display ───────────────────────────────────────────────────────────────
 
-    @GET("display/screenshott")
+    @GET("display/screenshot")
     suspend fun getScreenshot(): ScreenshotResponse
 
     @POST("display/record")
@@ -106,7 +106,17 @@ interface VelaApiService {
     // ── Filesystem ────────────────────────────────────────────────────────────
 
     @GET("fs/list")
-    suspend fun listFiles(@Query("path") path: String): FileListResponse
+    suspend fun listFiles(
+        @Query("path") path: String,
+        @Query("show_hidden") showHidden: Boolean? = null
+    ): FileListResponse
+
+    @GET("fs/tree")
+    suspend fun getTree(
+        @Query("path") path: String,
+        @Query("max_depth") maxDepth: Int? = null,
+        @Query("show_hidden") showHidden: Boolean? = null
+    ): FileTreeResponse
 
     @Streaming
     @GET("fs/download")
@@ -115,7 +125,7 @@ interface VelaApiService {
     @Multipart
     @POST("fs/upload")
     suspend fun uploadFile(
-        @Part("path") path: RequestBody,
+        @Part("path") path: RequestBody?,
         @Part file: MultipartBody.Part
     ): GenericResponse
 
@@ -131,7 +141,7 @@ interface VelaApiService {
     @GET("fs/search")
     suspend fun searchFiles(
         @Query("query") query: String,
-        @Query("path") path: String
+        @Query("path") path: String? = null
     ): FileListResponse
 
     @GET("fs/disk-usage")
@@ -172,7 +182,7 @@ interface VelaApiService {
     @POST("network/ping")
     suspend fun pingHost(@Body body: PingHostRequest): PingHostResponse
 
-    @GET("network/speed-testt")
+    @GET("network/speed-test")
     suspend fun speedTest(): SpeedTestResponse
 
     @GET("network/bluetooth/devices")
