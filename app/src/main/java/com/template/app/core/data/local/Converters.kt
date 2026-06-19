@@ -22,4 +22,12 @@ class Converters {
     @TypeConverter
     fun toStringList(list: List<String>?): String =
         list?.joinToString(",") ?: ""
+
+    @TypeConverter
+    fun fromDoubleList(value: String?): List<Double> =
+        value?.split(",")?.filter { it.isNotEmpty() }?.mapNotNull { it.toDoubleOrNull() } ?: emptyList()
+
+    @TypeConverter
+    fun toDoubleList(list: List<Double>?): String =
+        list?.joinToString(",") ?: ""
 }

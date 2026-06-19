@@ -44,7 +44,7 @@ fun MainScreen(onLogout: () -> Unit) {
     val items = listOf(
         NavigationItem("Dashboard", Routes.DASHBOARD, Icons.Default.Dashboard),
         NavigationItem("Display", Routes.DISPLAY, Icons.Default.Monitor),
-        NavigationItem("Audio", Routes.AUDIO, Icons.AutoMirrored.Filled.VolumeUp),
+        NavigationItem("Monitor", Routes.MONITOR, Icons.Default.Speed),
         NavigationItem("Media", Routes.MEDIA, Icons.Default.PlayCircle)
     )
 
@@ -102,7 +102,7 @@ fun MainScreen(onLogout: () -> Unit) {
         ) {
             composable(Routes.DASHBOARD) { DashboardScreen() }
             composable(Routes.DISPLAY) { DisplayScreen() }
-            composable(Routes.AUDIO) { AudioScreen() }
+            composable(Routes.MONITOR) { MonitorScreen() }
             composable(Routes.MEDIA) { MediaScreen() }
             
             // More menu screens
@@ -112,6 +112,7 @@ fun MainScreen(onLogout: () -> Unit) {
             composable(Routes.SCHEDULER) { SchedulerScreen() }
             composable(Routes.MAINTENANCE) { MaintenanceScreen(onBack = {navController.popBackStack()}) }
             composable(Routes.NETWORK) { NetworkScreen() }
+            composable(Routes.AUDIO){ AudioScreen() }
             composable(Routes.POWER) { 
                 PowerScreen(onBack = { navController.popBackStack() }) 
             }
@@ -152,6 +153,7 @@ fun MoreMenuGrid(onNavigate: (String) -> Unit) {
     val moreItems = listOf(
         NavigationItem("Files", Routes.FILES, Icons.Default.Folder),
         NavigationItem("Processes", Routes.PROCESSES, Icons.Default.Memory),
+        NavigationItem("Audio", Routes.AUDIO, Icons.AutoMirrored.Filled.VolumeUp),
         NavigationItem("Security", Routes.SECURITY, Icons.Default.Security),
         NavigationItem("Scheduler", Routes.SCHEDULER, Icons.Default.Schedule),
         NavigationItem("Network", Routes.NETWORK, Icons.Default.NetworkCheck),

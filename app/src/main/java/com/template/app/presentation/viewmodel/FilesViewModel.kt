@@ -107,7 +107,7 @@ class FilesViewModel @Inject constructor(
 
                 updateBreadcrumbs(actualPath)
             } else if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+                appEventManager.showActionErrorSnackbar("Failed to load files")
             }
             _state.update { it.copy(isLoading = false, isRefreshing = false) }
         }
@@ -164,10 +164,9 @@ class FilesViewModel @Inject constructor(
             val path = if (current.isEmpty()) name else if (current.endsWith("/")) "$current$name" else "$current/$name"
             val result = repository.makeDirectory(path)
             if (result is Resource.Success) {
-                appEventManager.showActionSuccessSnackbar("Directory created")
                 loadFiles(_currentPath.value)
             } else if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+                appEventManager.showActionErrorSnackbar("Failed to create directory")
             }
             appEventManager.setLoading(false)
         }
@@ -178,10 +177,9 @@ class FilesViewModel @Inject constructor(
             appEventManager.setLoading(true)
             val result = repository.deleteFile(file.path)
             if (result is Resource.Success) {
-                appEventManager.showActionSuccessSnackbar("File deleted")
                 loadFiles(_currentPath.value)
             } else if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+                appEventManager.showActionErrorSnackbar("Failed to delete file")
             }
             appEventManager.setLoading(false)
         }
@@ -194,10 +192,9 @@ class FilesViewModel @Inject constructor(
             val newPath = if (parentPath.isEmpty()) newName else "$parentPath/$newName"
             val result = repository.renameFile(file.path, newPath)
             if (result is Resource.Success) {
-                appEventManager.showActionSuccessSnackbar("File renamed")
                 loadFiles(_currentPath.value)
             } else if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+                appEventManager.showActionErrorSnackbar("Failed to rename file")
             }
             appEventManager.setLoading(false)
         }
@@ -208,11 +205,10 @@ class FilesViewModel @Inject constructor(
             appEventManager.setLoading(true)
             val result = repository.uploadFile(_state.value.currentPath, localFile)
             if (result is Resource.Success) {
-                appEventManager.showActionSuccessSnackbar("File uploaded")
                 loadFiles(_currentPath.value)
                 localFile.delete()
             } else if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+                appEventManager.showActionErrorSnackbar("Failed to upload file")
             }
             appEventManager.setLoading(false)
         }
@@ -232,10 +228,9 @@ class FilesViewModel @Inject constructor(
             val outputPath = if (current.isEmpty()) outputName else if (current.endsWith("/")) "$current$outputName" else "$current/$outputName"
             val result = repository.zipFiles(paths, outputPath)
             if (result is Resource.Success) {
-                appEventManager.showActionSuccessSnackbar("Files zipped")
                 loadFiles(_currentPath.value)
             } else if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+                appEventManager.showActionErrorSnackbar("Failed to zip files")
             }
             appEventManager.setLoading(false)
         }
@@ -247,10 +242,9 @@ class FilesViewModel @Inject constructor(
             val destination = file.path.removeSuffix(".zip")
             val result = repository.unzipFile(file.path, destination)
             if (result is Resource.Success) {
-                appEventManager.showActionSuccessSnackbar("File unzipped")
                 loadFiles(_currentPath.value)
             } else if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+                appEventManager.showActionErrorSnackbar("Failed to unzip file")
             }
             appEventManager.setLoading(false)
         }

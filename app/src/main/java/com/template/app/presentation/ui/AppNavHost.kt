@@ -34,6 +34,8 @@ object Routes {
     const val SETTINGS = "settings"
 
     const val NETWORK_LOGS = "network_logs"
+
+    const val MONITOR = "monitor"
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

@@ -154,12 +154,6 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    fun refreshAllData() {
-        viewModelScope.launch {
-            dataSyncManager.performSyncCycle()
-        }
-    }
-
     fun toggleProcessLimit() {
         val newLimit = if (_processLimit.value == 5) 50 else 5
         _processLimit.value = newLimit
@@ -167,27 +161,57 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun setVolume(value: Int) {
-        viewModelScope.launch { velaRepository.setVolume(value) }
+        viewModelScope.launch {
+            val result = velaRepository.setVolume(value)
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to set volume")
+            }
+        }
     }
 
     fun setMute(muted: Boolean) {
-        viewModelScope.launch { velaRepository.setMute(muted) }
+        viewModelScope.launch {
+            val result = velaRepository.setMute(muted)
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to set mute")
+            }
+        }
     }
 
     fun setBrightness(value: Int) {
-        viewModelScope.launch { velaRepository.setBrightness(value) }
+        viewModelScope.launch {
+            val result = velaRepository.setBrightness(value)
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to set brightness")
+            }
+        }
     }
 
     fun togglePlayPause() {
-        viewModelScope.launch { velaRepository.togglePlayPause() }
+        viewModelScope.launch {
+            val result = velaRepository.togglePlayPause()
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to toggle play/pause")
+            }
+        }
     }
 
     fun writeClipboard(text: String) {
-        viewModelScope.launch { velaRepository.writeClipboard(text) }
+        viewModelScope.launch {
+            val result = velaRepository.writeClipboard(text)
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to write to clipboard")
+            }
+        }
     }
 
     fun lockScreen() {
-        viewModelScope.launch { velaRepository.lockDisplay() }
+        viewModelScope.launch {
+            val result = velaRepository.lockDisplay()
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to lock screen")
+            }
+        }
     }
 
     fun takeScreenshot() {
@@ -202,7 +226,9 @@ class DashboardViewModel @Inject constructor(
                         _state.update { it.copy(screenshot = bitmap) }
                     }
                 }
-                else -> {}
+                else -> {
+                    appEventManager.showActionErrorSnackbar("Failed to take screenshot")
+                }
             }
         }
     }

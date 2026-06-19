@@ -16,11 +16,17 @@ interface VelaDao {
     @Upsert
     suspend fun upsertHealth(health: VelaHealthEntity)
 
+    @Query("DELETE FROM vela_health")
+    suspend fun clearHealth()
+
     @Query("SELECT * FROM vela_network WHERE id = 0")
     fun observeNetwork(): Flow<VelaNetworkEntity?>
 
     @Upsert
     suspend fun upsertNetwork(network: VelaNetworkEntity)
+
+    @Query("DELETE FROM vela_network")
+    suspend fun clearNetwork()
 
     @Query("SELECT * FROM vela_audio WHERE id = 0")
     fun observeAudio(): Flow<VelaAudioEntity?>
@@ -51,8 +57,11 @@ interface VelaDao {
     @Upsert
     suspend fun upsertMedia(media: VelaMediaEntity)
 
-    @Query("SELECT * FROM vela_processes ORDER BY cpu DESC LIMIT :limit")
+    @Query("SELECT * FROM vela_processes WHERE isTopByMemory = 0 ORDER BY cpu DESC LIMIT :limit")
     fun observeProcesses(limit: Int): Flow<List<VelaProcessEntity>>
+
+    @Query("SELECT * FROM vela_processes WHERE isTopByMemory = 1 ORDER BY mem DESC LIMIT :limit")
+    fun observeProcessesByMemory(limit: Int): Flow<List<VelaProcessEntity>>
 
     @Upsert
     suspend fun upsertProcesses(processes: List<VelaProcessEntity>)
@@ -60,16 +69,33 @@ interface VelaDao {
     @Query("DELETE FROM vela_processes")
     suspend fun clearProcesses()
 
-    @Query("DELETE FROM vela_processes WHERE pid NOT IN (:pids)")
-    suspend fun deleteProcessesNotIn(pids: List<Int>)
+    @Query("DELETE FROM vela_processes WHERE isTopByMemory = 0")
+    suspend fun clearCpuProcesses()
+
+    @Query("DELETE FROM vela_processes WHERE isTopByMemory = 1")
+    suspend fun clearMemoryProcesses()
+
+    @Transaction
+    suspend fun replaceCpuProcesses(processes: List<VelaProcessEntity>) {
+        clearCpuProcesses()
+        if (processes.isNotEmpty()) {
+            upsertProcesses(processes)
+        }
+    }
+
+    @Transaction
+    suspend fun replaceMemoryProcesses(processes: List<VelaProcessEntity>) {
+        clearMemoryProcesses()
+        if (processes.isNotEmpty()) {
+            upsertProcesses(processes)
+        }
+    }
 
     @Transaction
     suspend fun replaceProcesses(processes: List<VelaProcessEntity>) {
-        if (processes.isEmpty()) {
-            clearProcesses()
-        } else {
+        clearProcesses()
+        if (processes.isNotEmpty()) {
             upsertProcesses(processes)
-            deleteProcessesNotIn(processes.map { it.pid })
         }
     }
 
@@ -82,16 +108,11 @@ interface VelaDao {
     @Query("DELETE FROM vela_disks")
     suspend fun clearDisks()
 
-    @Query("DELETE FROM vela_disks WHERE mountpoint NOT IN (:mountpoints)")
-    suspend fun deleteDisksNotIn(mountpoints: List<String>)
-
     @Transaction
     suspend fun replaceDisks(disks: List<VelaDiskEntity>) {
-        if (disks.isEmpty()) {
-            clearDisks()
-        } else {
+        clearDisks()
+        if (disks.isNotEmpty()) {
             upsertDisks(disks)
-            deleteDisksNotIn(disks.map { it.mountpoint })
         }
     }
 
@@ -141,6 +162,114 @@ interface VelaDao {
 
     @Upsert
     suspend fun upsertRamUsage(ramUsage: VelaRamUsageEntity)
+
+    @Query("SELECT * FROM vela_gpu_usage")
+    fun observeGpuUsage(): Flow<List<VelaGpuUsageEntity>>
+
+    @Upsert
+    suspend fun upsertGpuUsage(gpuUsage: List<VelaGpuUsageEntity>)
+
+    @Query("DELETE FROM vela_gpu_usage")
+    suspend fun clearGpuUsage()
+
+    @Transaction
+    suspend fun replaceGpuUsage(gpuUsage: List<VelaGpuUsageEntity>) {
+        clearGpuUsage()
+        if (gpuUsage.isNotEmpty()) {
+            upsertGpuUsage(gpuUsage)
+        }
+    }
+
+    @Query("SELECT * FROM vela_disk_io")
+    fun observeDiskIo(): Flow<List<VelaDiskIoEntity>>
+
+    @Upsert
+    suspend fun upsertDiskIo(diskIo: List<VelaDiskIoEntity>)
+
+    @Query("DELETE FROM vela_disk_io")
+    suspend fun clearDiskIo()
+
+    @Transaction
+    suspend fun replaceDiskIo(diskIo: List<VelaDiskIoEntity>) {
+        clearDiskIo()
+        if (diskIo.isNotEmpty()) {
+            upsertDiskIo(diskIo)
+        }
+    }
+
+    @Query("SELECT * FROM vela_network_io")
+    fun observeNetworkIo(): Flow<List<VelaNetworkIoEntity>>
+
+    @Upsert
+    suspend fun upsertNetworkIo(networkIo: List<VelaNetworkIoEntity>)
+
+    @Query("DELETE FROM vela_network_io")
+    suspend fun clearNetworkIo()
+
+    @Transaction
+    suspend fun replaceNetworkIo(networkIo: List<VelaNetworkIoEntity>) {
+        clearNetworkIo()
+        if (networkIo.isNotEmpty()) {
+            upsertNetworkIo(networkIo)
+        }
+    }
+
+    @Query("SELECT * FROM vela_temperatures")
+    fun observeTemperatures(): Flow<List<VelaTemperatureEntity>>
+
+    @Upsert
+    suspend fun upsertTemperatures(temperatures: List<VelaTemperatureEntity>)
+
+    @Query("DELETE FROM vela_temperatures")
+    suspend fun clearTemperatures()
+
+    @Transaction
+    suspend fun replaceTemperatures(temperatures: List<VelaTemperatureEntity>) {
+        clearTemperatures()
+        if (temperatures.isNotEmpty()) {
+            upsertTemperatures(temperatures)
+        }
+    }
+
+    @Query("SELECT * FROM vela_sensors")
+    fun observeSensors(): Flow<List<VelaSensorEntity>>
+
+    @Upsert
+    suspend fun upsertSensors(sensors: List<VelaSensorEntity>)
+
+    @Query("DELETE FROM vela_sensors")
+    suspend fun clearSensors()
+
+    @Transaction
+    suspend fun replaceSensors(sensors: List<VelaSensorEntity>) {
+        clearSensors()
+        if (sensors.isNotEmpty()) {
+            upsertSensors(sensors)
+        }
+    }
+
+    @Query("SELECT * FROM vela_fans")
+    fun observeFans(): Flow<List<VelaFanEntity>>
+
+    @Upsert
+    suspend fun upsertFans(fans: List<VelaFanEntity>)
+
+    @Query("DELETE FROM vela_fans")
+    suspend fun clearFans()
+
+    @Transaction
+    suspend fun replaceFans(fans: List<VelaFanEntity>) {
+        clearFans()
+        if (fans.isNotEmpty()) {
+            upsertFans(fans)
+        }
+    }
+
+    @Query("SELECT * FROM vela_battery WHERE id = 0")
+    fun observeBattery(): Flow<VelaBatteryEntity?>
+
+    @Upsert
+    suspend fun upsertBattery(battery: VelaBatteryEntity)
 
     @Query("SELECT * FROM vela_clipboard WHERE id = 0")
     fun observeClipboard(): Flow<VelaClipboardEntity?>

@@ -375,13 +375,16 @@ data class MediaSeekRequest(
 data class ProcessItem(
     val pid: Int? = null,
     val name: String? = null,
+    val username: String? = null,
     @Json(name = "cpu_percent") val cpu: Double? = null,
-    @Json(name = "memory_percent") val mem: Double? = null
+    @Json(name = "memory_percent") val mem: Double? = null,
+    @Json(name = "memory_rss") val memRss: Long? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class ProcessesResponse(
-    @Json(name = "top_by_cpu") val processes: List<ProcessItem>? = null
+    @Json(name = "top_by_cpu") val topByCpu: List<ProcessItem>? = null,
+    @Json(name = "top_by_memory") val topByMemory: List<ProcessItem>? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -414,7 +417,68 @@ data class RamResponse(
     val available: Long? = null,
     val used: Long? = null,
     val percent: Double? = null,
+    @Json(name = "swap_total") val swapTotal: Long? = null,
+    @Json(name = "swap_used") val swapUsed: Long? = null,
+    @Json(name = "swap_free") val swapFree: Long? = null,
     @Json(name = "swap_percent") val swapPercent: Double? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class GpuItem(
+    val name: String? = null,
+    @Json(name = "usage_percent") val usagePercent: Double? = null,
+    @Json(name = "vram_total") val vramTotal: Long? = null,
+    @Json(name = "vram_used") val vramUsed: Long? = null,
+    @Json(name = "vram_percent") val vramPercent: Double? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DiskIoItem(
+    val device: String? = null,
+    @Json(name = "read_bytes_per_sec") val readBytesPerSec: Double? = null,
+    @Json(name = "write_bytes_per_sec") val writeBytesPerSec: Double? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class NetworkIoItem(
+    @Json(name = "interface") val interfaceName: String? = null,
+    @Json(name = "bytes_sent_per_sec") val bytesSentPerSec: Double? = null,
+    @Json(name = "bytes_recv_per_sec") val bytesRecvPerSec: Double? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SensorItem(
+    val sensor: String? = null,
+    val label: String? = null,
+    val current: Double? = null,
+    val high: Double? = null,
+    val critical: Double? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class FanItem(
+    val sensor: String? = null,
+    @Json(name = "speed_rpm") val speedRpm: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class BatteryResponse(
+    val percent: Double? = null,
+    @Json(name = "plugged_in") val pluggedIn: Boolean? = null,
+    @Json(name = "secs_left") val secsLeft: Long? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MonitorSnapshotResponse(
+    val cpu: CpuResponse? = null,
+    val ram: RamResponse? = null,
+    val gpu: List<GpuItem>? = null,
+    @Json(name = "disk_io") val diskIo: List<DiskIoItem>? = null,
+    @Json(name = "network_io") val networkIo: List<NetworkIoItem>? = null,
+    val temperatures: List<SensorItem>? = null,
+    val fans: List<FanItem>? = null,
+    val battery: BatteryResponse? = null,
+    val processes: ProcessesResponse? = null
 )
 
 // ── Input ──

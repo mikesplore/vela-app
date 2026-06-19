@@ -105,18 +105,26 @@ data class VelaMediaEntity(
 
 @Entity(tableName = "vela_processes")
 data class VelaProcessEntity(
-    @PrimaryKey val pid: Int,
+    @PrimaryKey val id: String, // Combination of pid and isTopByMemory to allow caching both lists
+    val pid: Int,
     val name: String,
     val cpu: Double,
-    val mem: Double
+    val mem: Double,
+    val username: String? = null,
+    val memoryRss: Long? = null,
+    val isTopByMemory: Boolean = false
 ) {
-    fun toDomain() = VelaProcess(pid, name, cpu, mem)
+    fun toDomain() = VelaProcess(pid, name, cpu, mem, username, memoryRss)
     companion object {
-        fun fromDomain(domain: VelaProcess) = VelaProcessEntity(
+        fun fromDomain(domain: VelaProcess, isTopByMemory: Boolean = false) = VelaProcessEntity(
+            id = "${domain.pid}_${if (isTopByMemory) "mem" else "cpu"}",
             pid = domain.pid,
             name = domain.name,
             cpu = domain.cpu,
-            mem = domain.mem
+            mem = domain.mem,
+            username = domain.username,
+            memoryRss = domain.memoryRss,
+            isTopByMemory = isTopByMemory
         )
     }
 }
@@ -219,22 +227,153 @@ data class VelaResolutionEntity(
 @Entity(tableName = "vela_cpu_usage")
 data class VelaCpuUsageEntity(
     @PrimaryKey val id: Int = 0,
-    val overall: Double
+    val overall: Double,
+    val perCore: List<Double>
 ) {
-    fun toDomain() = VelaCpuUsage(overall)
+    fun toDomain() = VelaCpuUsage(overall, perCore)
     companion object {
-        fun fromDomain(domain: VelaCpuUsage) = VelaCpuUsageEntity(id = 0, overall = domain.overall)
+        fun fromDomain(domain: VelaCpuUsage) = VelaCpuUsageEntity(id = 0, overall = domain.overall, perCore = domain.perCore)
     }
 }
 
 @Entity(tableName = "vela_ram_usage")
 data class VelaRamUsageEntity(
     @PrimaryKey val id: Int = 0,
-    val percent: Double
+    val total: Long,
+    val available: Long,
+    val used: Long,
+    val percent: Double,
+    val swapTotal: Long,
+    val swapUsed: Long,
+    val swapFree: Long,
+    val swapPercent: Double
 ) {
-    fun toDomain() = VelaRamUsage(percent)
+    fun toDomain() = VelaRamUsage(total, available, used, percent, swapTotal, swapUsed, swapFree, swapPercent)
     companion object {
-        fun fromDomain(domain: VelaRamUsage) = VelaRamUsageEntity(id = 0, percent = domain.percent)
+        fun fromDomain(domain: VelaRamUsage) = VelaRamUsageEntity(
+            id = 0,
+            total = domain.total,
+            available = domain.available,
+            used = domain.used,
+            percent = domain.percent,
+            swapTotal = domain.swapTotal,
+            swapUsed = domain.swapUsed,
+            swapFree = domain.swapFree,
+            swapPercent = domain.swapPercent
+        )
+    }
+}
+
+@Entity(tableName = "vela_gpu_usage")
+data class VelaGpuUsageEntity(
+    @PrimaryKey val name: String,
+    val usagePercent: Double,
+    val vramTotal: Long,
+    val vramUsed: Long,
+    val vramPercent: Double
+) {
+    fun toDomain() = VelaGpuUsage(name, usagePercent, vramTotal, vramUsed, vramPercent)
+    companion object {
+        fun fromDomain(domain: VelaGpuUsage) = VelaGpuUsageEntity(
+            name = domain.name ?: "Unknown GPU",
+            usagePercent = domain.usagePercent,
+            vramTotal = domain.vramTotal,
+            vramUsed = domain.vramUsed,
+            vramPercent = domain.vramPercent
+        )
+    }
+}
+
+@Entity(tableName = "vela_disk_io")
+data class VelaDiskIoEntity(
+    @PrimaryKey val device: String,
+    val readBytesPerSec: Double,
+    val writeBytesPerSec: Double
+) {
+    fun toDomain() = VelaDiskIo(device, readBytesPerSec, writeBytesPerSec)
+    companion object {
+        fun fromDomain(domain: VelaDiskIo) = VelaDiskIoEntity(domain.device, domain.readBytesPerSec, domain.writeBytesPerSec)
+    }
+}
+
+@Entity(tableName = "vela_network_io")
+data class VelaNetworkIoEntity(
+    @PrimaryKey val interfaceName: String,
+    val bytesSentPerSec: Double,
+    val bytesRecvPerSec: Double
+) {
+    fun toDomain() = VelaNetworkIo(interfaceName, bytesSentPerSec, bytesRecvPerSec)
+    companion object {
+        fun fromDomain(domain: VelaNetworkIo) = VelaNetworkIoEntity(domain.interfaceName, domain.bytesSentPerSec, domain.bytesRecvPerSec)
+    }
+}
+
+@Entity(tableName = "vela_temperatures")
+data class VelaTemperatureEntity(
+    @PrimaryKey val id: String, // sensor + label
+    val sensor: String,
+    val label: String,
+    val current: Double,
+    val high: Double?,
+    val critical: Double?
+) {
+    fun toDomain() = VelaTemperatureInfo(sensor, label, current, high, critical)
+    companion object {
+        fun fromDomain(domain: VelaTemperatureInfo) = VelaTemperatureEntity(
+            id = "${domain.sensor}_${domain.label}",
+            sensor = domain.sensor,
+            label = domain.label,
+            current = domain.current,
+            high = domain.high,
+            critical = domain.critical
+        )
+    }
+}
+
+@Entity(tableName = "vela_sensors")
+data class VelaSensorEntity(
+    @PrimaryKey val name: String,
+    val value: String,
+    val unit: String?
+) {
+    fun toDomain() = VelaSensorInfo(name, value, unit)
+    companion object {
+        fun fromDomain(domain: VelaSensorInfo) = VelaSensorEntity(
+            name = domain.name,
+            value = domain.value,
+            unit = domain.unit
+        )
+    }
+}
+
+@Entity(tableName = "vela_fans")
+data class VelaFanEntity(
+    @PrimaryKey val id: String, // sensor + index
+    val sensor: String,
+    val speedRpm: Int,
+    val index: Int
+) {
+    fun toDomain() = VelaFanInfo(sensor, speedRpm, index)
+    companion object {
+        fun fromDomain(domain: VelaFanInfo) = VelaFanEntity(
+            id = "${domain.sensor}_${domain.index}",
+            sensor = domain.sensor,
+            speedRpm = domain.speedRpm,
+            index = domain.index
+        )
+    }
+}
+
+@Entity(tableName = "vela_battery")
+data class VelaBatteryEntity(
+    @PrimaryKey val id: Int = 0,
+    val percent: Double,
+    val pluggedIn: Boolean,
+    val secsLeft: Long?
+) {
+    fun toDomain() = VelaBatteryStatus(percent, pluggedIn, secsLeft)
+    companion object {
+        fun fromDomain(domain: VelaBatteryStatus) = VelaBatteryEntity(id = 0, percent = domain.percent, pluggedIn = domain.pluggedIn, secsLeft = domain.secsLeft)
     }
 }
 

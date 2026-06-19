@@ -3,7 +3,7 @@ package com.template.app.domain.model
 data class VelaHealth(
     val status: String,
     val uptimeSeconds: Long,
-    val version: String = "1.0.0"
+    val version: String = "1.2.4"
 )
 
 data class VelaNetworkInfo(
@@ -48,7 +48,9 @@ data class VelaProcess(
     val pid: Int,
     val name: String,
     val cpu: Double,
-    val mem: Double
+    val mem: Double,
+    val username: String? = null,
+    val memoryRss: Long? = null
 )
 
 data class VelaDiskUsage(
@@ -115,11 +117,79 @@ data class VelaResolution(
 )
 
 data class VelaCpuUsage(
-    val overall: Double
+    val overall: Double,
+    val perCore: List<Double> = emptyList()
 )
 
 data class VelaRamUsage(
-    val percent: Double
+    val total: Long = 0,
+    val available: Long = 0,
+    val used: Long = 0,
+    val percent: Double,
+    val swapTotal: Long = 0,
+    val swapUsed: Long = 0,
+    val swapFree: Long = 0,
+    val swapPercent: Double = 0.0
+)
+
+data class VelaGpuUsage(
+    val name: String? = null,
+    val usagePercent: Double = 0.0,
+    val vramTotal: Long = 0,
+    val vramUsed: Long = 0,
+    val vramPercent: Double = 0.0
+)
+
+data class VelaDiskIo(
+    val device: String,
+    val readBytesPerSec: Double,
+    val writeBytesPerSec: Double
+)
+
+data class VelaNetworkIo(
+    val interfaceName: String,
+    val bytesSentPerSec: Double,
+    val bytesRecvPerSec: Double
+)
+
+data class VelaTemperatureInfo(
+    val sensor: String,
+    val label: String,
+    val current: Double,
+    val high: Double? = null,
+    val critical: Double? = null
+)
+
+data class VelaFanInfo(
+    val sensor: String,
+    val speedRpm: Int,
+    val index: Int = 0
+)
+
+data class VelaSensorInfo(
+    val name: String,
+    val value: String,
+    val unit: String? = null
+)
+
+data class VelaBatteryStatus(
+    val percent: Double,
+    val pluggedIn: Boolean,
+    val secsLeft: Long? = null
+)
+
+data class VelaMonitorSnapshot(
+    val cpu: VelaCpuUsage,
+    val ram: VelaRamUsage,
+    val gpu: List<VelaGpuUsage>,
+    val diskIo: List<VelaDiskIo>,
+    val networkIo: List<VelaNetworkIo>,
+    val temperatures: List<VelaTemperatureInfo>,
+    val fans: List<VelaFanInfo>,
+    val sensors: List<VelaSensorInfo> = emptyList(),
+    val battery: VelaBatteryStatus?,
+    val topProcessesByCpu: List<VelaProcess>,
+    val topProcessesByMemory: List<VelaProcess>
 )
 
 data class VelaFileInfo(

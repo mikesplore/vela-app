@@ -4,10 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.template.app.core.utils.AppEventManager
 import com.template.app.core.utils.Resource
-import com.template.app.domain.model.*
+import com.template.app.domain.model.VelaBluetoothDevice
+import com.template.app.domain.model.VelaNetworkInfo
+import com.template.app.domain.model.VelaPingResult
+import com.template.app.domain.model.VelaSpeedTest
+import com.template.app.domain.model.VelaWifiStatus
 import com.template.app.domain.repository.VelaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -56,11 +64,26 @@ class NetworkViewModel @Inject constructor(
         }
     }
 
+    fun disconnectWifi() {
+        viewModelScope.launch {
+            appEventManager.setLoading(true)
+            val result = velaRepository.disconnectWifi()
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to disconnect")
+            }
+            velaRepository.getWifiStatus()
+            appEventManager.setLoading(false)
+        }
+    }
+
     fun toggleWifi(enabled: Boolean) {
         viewModelScope.launch {
             appEventManager.setLoading(true)
             _state.update { it.copy(isWifiToggling = true) }
-            velaRepository.toggleWifi(enabled)
+            val result = velaRepository.toggleWifi(enabled)
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to ${if (enabled) "enable" else "disable"} wifi")
+            }
             velaRepository.getWifiStatus()
             _state.update { it.copy(isWifiToggling = false) }
             appEventManager.setLoading(false)
@@ -73,12 +96,10 @@ class NetworkViewModel @Inject constructor(
             when (val result = velaRepository.pingHost(host, count)) {
                 is Resource.Success -> {
                     _state.update { it.copy(pingResult = result.data) }
-                    appEventManager.showActionSuccessSnackbar("Ping completed")
                 }
 
                 is Resource.Error -> {
-                    _state.update { it.copy(error = result.message) }
-                    appEventManager.showActionErrorSnackbar(result.message)
+                    appEventManager.showActionErrorSnackbar("Failed to ping")
                 }
 
                 else -> {}
@@ -89,17 +110,14 @@ class NetworkViewModel @Inject constructor(
 
     fun runSpeedTest() {
         viewModelScope.launch {
-            appEventManager.showActionSuccessSnackbar("Starting speed test...")
             _state.update { it.copy(isSpeedTesting = true, speedTest = null) }
             when (val result = velaRepository.runSpeedTest()) {
                 is Resource.Success -> {
                     _state.update { it.copy(speedTest = result.data) }
-                    appEventManager.showActionSuccessSnackbar("Speed test finished")
                 }
 
                 is Resource.Error -> {
-                    _state.update { it.copy(error = result.message) }
-                    appEventManager.showActionErrorSnackbar(result.message)
+                    appEventManager.showActionErrorSnackbar("Failed to run speed test")
                 }
 
                 else -> {}
@@ -108,8 +126,7 @@ class NetworkViewModel @Inject constructor(
         }
     }
 
-
-fun fetchBluetoothDevices() {
+    fun fetchBluetoothDevices() {
         viewModelScope.launch {
             _state.update { it.copy(isBluetoothLoading = true) }
             when (val result = velaRepository.getBluetoothDevices()) {
@@ -122,12 +139,19 @@ fun fetchBluetoothDevices() {
 
     fun toggleBluetoothPairing(device: VelaBluetoothDevice) {
         viewModelScope.launch {
-            if (device.isPaired) {
+            appEventManager.setLoading(true)
+            val result = if (device.isPaired) {
                 velaRepository.unpairBluetooth(device.id)
             } else {
                 velaRepository.pairBluetooth(device.id)
             }
+
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to ${if (device.isPaired) "unpair" else "pair"}")
+            }
+
             fetchBluetoothDevices()
+            appEventManager.setLoading(false)
         }
     }
 }

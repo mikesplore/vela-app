@@ -33,13 +33,20 @@ import com.template.app.core.data.local.entities.*
         VelaResolutionEntity::class,
         VelaCpuUsageEntity::class,
         VelaRamUsageEntity::class,
+        VelaGpuUsageEntity::class,
+        VelaDiskIoEntity::class,
+        VelaNetworkIoEntity::class,
+        VelaTemperatureEntity::class,
+        VelaSensorEntity::class,
+        VelaFanEntity::class,
+        VelaBatteryEntity::class,
         VelaClipboardEntity::class,
         VelaActiveWindowEntity::class,
         VelaScheduledTaskEntity::class,
         VelaFileEntity::class,
         VelaConfigEntity::class
     ],
-    version = 16,
+    version = 18,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

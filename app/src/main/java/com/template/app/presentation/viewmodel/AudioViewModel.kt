@@ -2,6 +2,8 @@ package com.template.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.template.app.core.utils.AppEventManager
+import com.template.app.core.utils.Resource
 import com.template.app.domain.model.VelaAudioDevice
 import com.template.app.domain.model.VelaAudioState
 import com.template.app.domain.repository.VelaRepository
@@ -19,7 +21,8 @@ data class AudioUiState(
 
 @HiltViewModel
 class AudioViewModel @Inject constructor(
-    private val velaRepository: VelaRepository
+    private val velaRepository: VelaRepository,
+    private val appEventManager: AppEventManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AudioUiState())
@@ -51,39 +54,57 @@ class AudioViewModel @Inject constructor(
 
     fun setVolume(value: Int) {
         viewModelScope.launch {
-            velaRepository.setVolume(value)
+            val result = velaRepository.setVolume(value)
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to set volume")
+            }
         }
     }
 
     fun volumeUp() {
         viewModelScope.launch {
-            velaRepository.volumeUp()
+           val result =  velaRepository.volumeUp()
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to increase volume")
+            }
         }
     }
 
     fun volumeDown() {
         viewModelScope.launch {
-            velaRepository.volumeDown()
+           val result =  velaRepository.volumeDown()
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to decrease volume")
+            }
         }
     }
 
     fun toggleMute() {
         val currentState = _uiState.value.audioState ?: return
         viewModelScope.launch {
-            velaRepository.setMute(!currentState.muted)
+           val result =  velaRepository.setMute(!currentState.muted)
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to ${if (currentState.muted) "unmute" else "mute"} audio")
+            }
         }
     }
 
     fun toggleMicMute() {
         val currentState = _uiState.value.audioState ?: return
         viewModelScope.launch {
-            velaRepository.setMicMute(!currentState.micMuted)
+            val result = velaRepository.setMicMute(!currentState.micMuted)
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to ${if (currentState.micMuted) "unmute" else "mute"} microphone")
+            }
         }
     }
 
     fun selectDevice(device: VelaAudioDevice) {
         viewModelScope.launch {
-            velaRepository.setOutputDevice(device.id)
+            val result= velaRepository.setOutputDevice(device.id)
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to select device")
+            }
             velaRepository.getAudioDevices() // Refresh to update selection state
         }
     }

@@ -10,7 +10,12 @@ import com.template.app.core.utils.Resource
 import com.template.app.domain.model.VelaResolution
 import com.template.app.domain.repository.VelaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -78,7 +83,8 @@ class DisplayViewModel @Inject constructor(
                 is Resource.Success -> {
                     val base64Str = result.data
                     if (base64Str.isNotBlank()) {
-                        val cleanBase64 = if (base64Str.contains(",")) base64Str.substringAfter(",") else base64Str
+                        val cleanBase64 =
+                            if (base64Str.contains(",")) base64Str.substringAfter(",") else base64Str
                         try {
                             val bytes = Base64.decode(cleanBase64, Base64.DEFAULT)
                             val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
@@ -88,9 +94,11 @@ class DisplayViewModel @Inject constructor(
                         }
                     }
                 }
+
                 is Resource.Error -> {
-                    appEventManager.showActionErrorSnackbar(result.message)
+                    appEventManager.showActionErrorSnackbar("Failed to take screenshot")
                 }
+
                 else -> {}
             }
         }
@@ -98,7 +106,10 @@ class DisplayViewModel @Inject constructor(
 
     fun setBrightness(value: Int) {
         viewModelScope.launch {
-            repository.setBrightness(value)
+            val result = repository.setBrightness(value)
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to set brightness")
+            }
         }
     }
 
@@ -107,7 +118,7 @@ class DisplayViewModel @Inject constructor(
             appEventManager.setLoading(true)
             val result = repository.rotateDisplay(orientation)
             if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+                appEventManager.showActionErrorSnackbar("Failed to rotate display")
             }
             appEventManager.setLoading(false)
         }
@@ -116,23 +127,44 @@ class DisplayViewModel @Inject constructor(
     fun setNightLight(enabled: Boolean, temperature: Int? = null) {
         viewModelScope.launch {
             val finalTemp = temperature ?: _state.value.nightLightTemperature
-            repository.setNightLight(enabled, finalTemp)
+            val result = repository.setNightLight(enabled, finalTemp)
+            if (result is Resource.Success) {
+                _state.update {
+                    it.copy(
+                        isNightLightEnabled = enabled,
+                        nightLightTemperature = finalTemp
+                    )
+                }
+
+            } else if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to ${if (enabled) "enable" else "disable"} night light")
+            }
         }
     }
 
     fun monitorOff() {
-        viewModelScope.launch { repository.monitorOff() }
+        viewModelScope.launch {
+            val result = repository.monitorOff()
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to disable monitor")
+            }
+        }
     }
 
     fun monitorOn() {
-        viewModelScope.launch { repository.monitorOn() }
+        viewModelScope.launch {
+            val result = repository.monitorOn()
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to enable monitor")
+            }
+        }
     }
 
     fun lockScreen() {
         viewModelScope.launch {
             val result = repository.lockDisplay()
-            if (result is Resource.Success) {
-                appEventManager.showActionSuccessSnackbar("Screen locked")
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to lock screen")
             }
         }
     }

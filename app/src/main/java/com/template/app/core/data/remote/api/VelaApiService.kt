@@ -264,11 +264,35 @@ interface VelaApiService {
 
     // ── Monitor ─────────────────────────────────────────────────────────────
 
+    @GET("monitor/snapshot")
+    suspend fun getMonitorSnapshot(): MonitorSnapshotResponse
+
     @GET("monitor/cpu")
     suspend fun getMonitorCpu(): CpuResponse
 
     @GET("monitor/ram")
     suspend fun getMonitorRam(): RamResponse
+
+    @GET("monitor/gpu")
+    suspend fun getMonitorGpu(): List<GpuItem>
+
+    @GET("monitor/disk-io")
+    suspend fun getMonitorDiskIo(): List<DiskIoItem>
+
+    @GET("monitor/network-io")
+    suspend fun getMonitorNetworkIo(): List<NetworkIoItem>
+
+    @GET("monitor/temperatures")
+    suspend fun getMonitorTemperatures(): List<SensorItem>
+
+    @GET("monitor/fans")
+    suspend fun getMonitorFans(): List<FanItem>
+
+    @GET("monitor/battery")
+    suspend fun getMonitorBattery(): BatteryResponse
+
+    @GET("monitor/processes")
+    suspend fun getMonitorProcesses(): ProcessesResponse
 
     // ── Input Control ─────────────────────────────────────────────────────────
 

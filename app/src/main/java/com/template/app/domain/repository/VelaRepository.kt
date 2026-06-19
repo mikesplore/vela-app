@@ -20,6 +20,15 @@ interface VelaRepository {
     fun observeResolution(): Flow<VelaResolution?>
     fun observeCpuUsage(): Flow<VelaCpuUsage?>
     fun observeRamUsage(): Flow<VelaRamUsage?>
+    fun observeGpuUsage(): Flow<List<VelaGpuUsage>>
+    fun observeDiskIo(): Flow<List<VelaDiskIo>>
+    fun observeNetworkIo(): Flow<List<VelaNetworkIo>>
+    fun observeTemperatures(): Flow<List<VelaTemperatureInfo>>
+    fun observeFans(): Flow<List<VelaFanInfo>>
+    fun observeSensors(): Flow<List<VelaSensorInfo>>
+    fun observeBattery(): Flow<VelaBatteryStatus?>
+    fun observeTopProcessesByCpu(limit: Int = 5): Flow<List<VelaProcess>>
+    fun observeTopProcessesByMemory(limit: Int = 5): Flow<List<VelaProcess>>
     fun observeClipboard(): Flow<VelaClipboard?>
     fun observeActiveWindow(): Flow<String?>
     fun observeScheduledTasks(): Flow<List<VelaScheduledTask>>
@@ -118,6 +127,7 @@ interface VelaRepository {
     // Monitor
     suspend fun getCpuUsage(): Resource<VelaCpuUsage>
     suspend fun getRamUsage(): Resource<VelaRamUsage>
+    suspend fun getMonitorSnapshot(): Resource<VelaMonitorSnapshot>
 
     // Scheduler
     suspend fun getScheduledTasks(): Resource<List<VelaScheduledTask>>

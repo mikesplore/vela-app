@@ -59,10 +59,10 @@ class MaintenanceViewModel @Inject constructor(
     private suspend fun loadServices() {
         when (val result = repository.getServices()) {
             is Resource.Success -> {
-                _uiState.update { it.copy(services = result.data ?: emptyList()) }
+                _uiState.update { it.copy(services = result.data) }
             }
             is Resource.Error -> {
-                appEventManager.showActionErrorSnackbar(result.message ?: "Failed to load services")
+                appEventManager.showActionErrorSnackbar("Failed to load services")
             }
             else -> Unit
         }
@@ -76,27 +76,23 @@ class MaintenanceViewModel @Inject constructor(
         viewModelScope.launch {
             appEventManager.setLoading(true)
             when (val result = action()) {
-                is Resource.Success -> {
-                    appEventManager.showActionSuccessSnackbar("Service $serviceName $actionVerb")
-                    loadServices()
-                }
                 is Resource.Error -> {
-                    appEventManager.showActionErrorSnackbar(result.message)
+                    appEventManager.showActionErrorSnackbar("Action failed")
                 }
                 else -> Unit
             }
+            loadServices() // Always refresh list
             appEventManager.setLoading(false)
         }
     }
+
 
     // --- Quick Actions ---
     fun clearCache() {
         viewModelScope.launch {
             appEventManager.setLoading(true)
-            when (val result = repository.clearCache()) {
-                is Resource.Success -> appEventManager.showActionSuccessSnackbar("Cache cleared")
-                is Resource.Error -> appEventManager.showActionErrorSnackbar(result.message)
-                else -> Unit
+            if (repository.clearCache() is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Action failed")
             }
             appEventManager.setLoading(false)
         }
@@ -105,10 +101,8 @@ class MaintenanceViewModel @Inject constructor(
     fun syncTime() {
         viewModelScope.launch {
             appEventManager.setLoading(true)
-            when (val result = repository.syncTime()) {
-                is Resource.Success -> appEventManager.showActionSuccessSnackbar("Time synchronized")
-                is Resource.Error -> appEventManager.showActionErrorSnackbar(result.message)
-                else -> Unit
+            if (repository.syncTime() is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Action failed")
             }
             appEventManager.setLoading(false)
         }
@@ -129,13 +123,12 @@ class MaintenanceViewModel @Inject constructor(
     fun runUpdates() {
         viewModelScope.launch {
             appEventManager.setLoading(true)
-            when (val result = repository.runUpdates()) {
+            when (repository.runUpdates()) {
                 is Resource.Success -> {
-                    appEventManager.showActionSuccessSnackbar("Updates completed successfully")
                     _uiState.update { it.copy(availableUpdates = emptyList()) }
                 }
                 is Resource.Error -> {
-                    appEventManager.showActionErrorSnackbar(result.message ?: "Update process failed")
+                    appEventManager.showActionErrorSnackbar("Action failed")
                 }
                 else -> Unit
             }

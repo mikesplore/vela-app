@@ -30,9 +30,8 @@ class MediaViewModel @Inject constructor(
 
     fun togglePlayPause() {
         viewModelScope.launch {
-            val result = velaRepository.togglePlayPause()
-            if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+            if (velaRepository.togglePlayPause() is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Action failed")
             }
             refreshMedia()
         }
@@ -40,9 +39,8 @@ class MediaViewModel @Inject constructor(
 
     fun playNext() {
         viewModelScope.launch {
-            val result = velaRepository.mediaNext()
-            if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+            if (velaRepository.mediaNext() is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Action failed")
             }
             refreshMedia()
         }
@@ -50,9 +48,8 @@ class MediaViewModel @Inject constructor(
 
     fun playPrevious() {
         viewModelScope.launch {
-            val result = velaRepository.mediaPrevious()
-            if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+            if (velaRepository.mediaPrevious() is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Action failed")
             }
             refreshMedia()
         }
@@ -60,9 +57,8 @@ class MediaViewModel @Inject constructor(
 
     fun seekTo(seconds: Int) {
         viewModelScope.launch {
-            val result = velaRepository.mediaSeek(seconds)
-            if (result is Resource.Error) {
-                appEventManager.showActionErrorSnackbar(result.message)
+            if (velaRepository.mediaSeek(seconds) is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Action failed")
             }
             refreshMedia()
         }
