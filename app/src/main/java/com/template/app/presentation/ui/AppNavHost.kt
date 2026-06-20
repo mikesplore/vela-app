@@ -16,6 +16,7 @@ object Routes {
 
     // Primary Tabs
     const val DASHBOARD = "dashboard"
+    const val CHAT = "chat"
     const val DISPLAY = "display"
     const val AUDIO = "audio"
     const val NETWORK = "network"

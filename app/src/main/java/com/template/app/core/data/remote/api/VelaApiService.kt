@@ -404,4 +404,12 @@ interface VelaApiService {
 
     @POST("maintenance/service/start")
     suspend fun startService(@Body body: ServiceActionRequest): GenericResponse
+
+    // ── Assistant ─────────────────────────────────────────────────────────────
+
+    @POST("assistant/chat")
+    suspend fun assistantChat(
+        @Header("X-Session-ID") sessionId: String,
+        @Body body: AssistantRequest
+    ): AssistantResponse
 }

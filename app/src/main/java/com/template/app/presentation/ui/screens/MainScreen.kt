@@ -44,7 +44,7 @@ fun MainScreen(onLogout: () -> Unit) {
 
     val items = listOf(
         NavigationItem("Dashboard", Routes.DASHBOARD, Icons.Default.Dashboard),
-        NavigationItem("Display", Routes.DISPLAY, Icons.Default.Monitor),
+        NavigationItem("Assistant", Routes.CHAT, Icons.Default.SmartToy),
         NavigationItem("Monitor", Routes.MONITOR, Icons.Default.Speed),
         NavigationItem("Media", Routes.MEDIA, Icons.Default.PlayCircle)
     )
@@ -102,6 +102,7 @@ fun MainScreen(onLogout: () -> Unit) {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Routes.DASHBOARD) { DashboardScreen() }
+            composable(Routes.CHAT) { ChatScreen() }
             composable(Routes.DISPLAY) { DisplayScreen() }
             composable(Routes.MONITOR) { MonitorScreen() }
             composable(Routes.MEDIA) { MediaScreen() }
@@ -152,6 +153,7 @@ fun MainScreen(onLogout: () -> Unit) {
 fun MoreMenuGrid(onNavigate: (String) -> Unit) {
     val colorScheme = MaterialTheme.colorScheme
     val moreItems = listOf(
+        NavigationItem("Display", Routes.DISPLAY, Icons.Default.Monitor),
         NavigationItem("Files", Routes.FILES, Icons.Default.Folder),
         NavigationItem("Processes", Routes.PROCESSES, Icons.Default.Memory),
         NavigationItem("Audio", Routes.AUDIO, Icons.AutoMirrored.Filled.VolumeUp),

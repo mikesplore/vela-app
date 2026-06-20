@@ -1,37 +1,7 @@
 package com.template.app.core.di
 
-import com.template.app.core.data.repository.AudioRepositoryImpl
-import com.template.app.core.data.repository.ClipboardRepositoryImpl
-import com.template.app.core.data.repository.ConfigRepositoryImpl
-import com.template.app.core.data.repository.DisplayRepositoryImpl
-import com.template.app.core.data.repository.FilesystemRepositoryImpl
-import com.template.app.core.data.repository.HealthRepositoryImpl
-import com.template.app.core.data.repository.MaintenanceRepositoryImpl
-import com.template.app.core.data.repository.MediaRepositoryImpl
-import com.template.app.core.data.repository.MonitorRepositoryImpl
-import com.template.app.core.data.repository.NetworkRepositoryImpl
-import com.template.app.core.data.repository.NotificationsRepositoryImpl
-import com.template.app.core.data.repository.PowerRepositoryImpl
-import com.template.app.core.data.repository.ProcessesRepositoryImpl
-import com.template.app.core.data.repository.SchedulesRepositoryImpl
-import com.template.app.core.data.repository.SettingsRepositoryImpl
-import com.template.app.core.data.repository.UserRepositoryImpl
-import com.template.app.domain.repository.AudioRepository
-import com.template.app.domain.repository.ClipboardRepository
-import com.template.app.domain.repository.ConfigRepository
-import com.template.app.domain.repository.DisplayRepository
-import com.template.app.domain.repository.FilesystemRepository
-import com.template.app.domain.repository.HealthRepository
-import com.template.app.domain.repository.MaintenanceRepository
-import com.template.app.domain.repository.MediaRepository
-import com.template.app.domain.repository.MonitorRepository
-import com.template.app.domain.repository.NetworkRepository
-import com.template.app.domain.repository.NotificationsRepository
-import com.template.app.domain.repository.PowerRepository
-import com.template.app.domain.repository.ProcessesRepository
-import com.template.app.domain.repository.SchedulesRepository
-import com.template.app.domain.repository.SettingsRepository
-import com.template.app.domain.repository.UserRepository
+import com.template.app.core.data.repository.*
+import com.template.app.domain.repository.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -106,5 +76,7 @@ object RepositoryModule {
     @Singleton
     fun provideMaintenanceRepository(impl: MaintenanceRepositoryImpl): MaintenanceRepository = impl
 
-
+    @Provides
+    @Singleton
+    fun provideAssistantRepository(impl: AssistantRepositoryImpl): AssistantRepository = impl
 }
