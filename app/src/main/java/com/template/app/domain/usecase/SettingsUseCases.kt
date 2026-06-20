@@ -1,5 +1,6 @@
 package com.template.app.domain.usecase
 
+import android.util.Log
 import com.template.app.domain.model.AppThemeMode
 import com.template.app.domain.model.ConnectionSettings
 import com.template.app.domain.model.VelaConfig

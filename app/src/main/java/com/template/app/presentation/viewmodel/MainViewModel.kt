@@ -40,15 +40,17 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             getSettingsUseCase().collectLatest { settings ->
                 _themeMode.value = settings.themeMode
-                
-                val isValid = settings.baseUrl.isNotBlank() && settings.apiToken.isNotBlank()
-                
-                // Set initial destination only once
+
+                // Check for both valid credentials AND onboarding completion
+                val canSync = settings.baseUrl.isNotBlank() &&
+                        settings.apiToken.isNotBlank()
+
                 if (_startDestination.value == null) {
-                    _startDestination.value = if (isValid) Routes.MAIN else Routes.ONBOARDING
+                    // Use onboardingComplete to determine start destination
+                    _startDestination.value = if (settings.onboardingComplete) Routes.MAIN else Routes.ONBOARDING
                 }
 
-                if (isValid) {
+                if (canSync) {
                     dataSyncManager.startSync()
                 } else {
                     dataSyncManager.stopSync()

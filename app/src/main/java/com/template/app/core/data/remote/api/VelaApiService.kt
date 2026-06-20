@@ -140,7 +140,7 @@ interface VelaApiService {
     suspend fun renameFile(@Body body: FileRenameRequest): GenericResponse
 
     @GET("fs/config")
-    suspend fun getConfig(): VelaConfig
+    suspend fun getConfig(): VelaConfigResponse
 
     @GET("fs/search")
     suspend fun searchFiles(

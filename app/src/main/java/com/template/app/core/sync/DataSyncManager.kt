@@ -3,6 +3,7 @@ package com.template.app.core.sync
 import android.util.Log
 import com.template.app.core.utils.AppEventManager
 import com.template.app.domain.repository.AudioRepository
+import com.template.app.domain.repository.ClipboardRepository
 import com.template.app.domain.repository.DisplayRepository
 import com.template.app.domain.repository.FilesystemRepository
 import com.template.app.domain.repository.HealthRepository
@@ -33,6 +34,7 @@ class DataSyncManager @Inject constructor(
     private val networkRepository: NetworkRepository,
     private val schedulerRepository: SchedulesRepository,
     private val powerRepository: PowerRepository,
+    private val clipboardRepository: ClipboardRepository,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var syncJob: Job? = null
@@ -78,7 +80,7 @@ class DataSyncManager @Inject constructor(
                     launch { networkRepository.getBluetoothDevices() },
                     launch { schedulerRepository.getScheduledTasks() },
                     launch { powerRepository.getPowerProfile() },
-                    launch { }
+                    launch { clipboardRepository.readClipboard() }
 
                 )
                 tasks.joinAll()

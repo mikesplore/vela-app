@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID // Add this import
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,13 +18,11 @@ sealed class UiEvent {
     data class ShowNetworkErrorSnackbar(val message: String) : UiEvent()
     data class ShowActionSuccessSnackbar(val message: String) : UiEvent()
     data class ShowActionErrorSnackbar(val message: String) : UiEvent()
-
-
-
 }
 
 data class NetworkErrorLog(
-    val id: Long = System.currentTimeMillis(),
+    // FIX: Use UUID for ID to prevent LazyColumn key collisions
+    val id: String = UUID.randomUUID().toString(),
     val url: String,
     val method: String,
     val code: Int,
@@ -44,11 +43,15 @@ class AppEventManager @Inject constructor() {
 
     private val _networkLogs = MutableStateFlow<List<NetworkErrorLog>>(emptyList())
     val networkLogs = _networkLogs.asStateFlow()
-    
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    private val _errorCount = MutableStateFlow(0)
+    val errorCount = _errorCount.asStateFlow()
+
+    // FIX: Move pruning to Dispatchers.Default to avoid blocking the Main thread
+    // if the list grows or during rapid updates
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     init {
-        // Automatically prune logs older than 30 seconds every 5 seconds
         scope.launch {
             while (true) {
                 delay(5000)
@@ -58,7 +61,8 @@ class AppEventManager @Inject constructor() {
     }
 
     fun emitEvent(event: UiEvent) {
-        scope.launch {
+        // Use a dedicated scope for events to ensure they are dispatched correctly
+        CoroutineScope(SupervisorJob() + Dispatchers.Main).launch {
             _events.emit(event)
         }
     }
@@ -85,7 +89,18 @@ class AppEventManager @Inject constructor() {
 
     fun addNetworkErrorLog(url: String, method: String, code: Int, message: String) {
         val newLog = NetworkErrorLog(url = url, method = method, code = code, message = message)
-        _networkLogs.update { (listOf(newLog) + it).take(50) } // Keep last 50, but pruning handles time
+
+        // Increment the count
+        _errorCount.update { it + 1 }
+
+        _networkLogs.update { currentLogs ->
+            (listOf(newLog) + currentLogs).take(50)
+        }
+    }
+
+    // Optional: Add a function to reset the count
+    fun clearLogCount() {
+        _errorCount.value = 0
     }
 
     private fun pruneLogs() {
@@ -94,4 +109,6 @@ class AppEventManager @Inject constructor() {
             logs.filter { now - it.timestamp < 30_000 }
         }
     }
+
+
 }

@@ -629,7 +629,7 @@ data class ServiceActionRequest(
 )
 
 @JsonClass(generateAdapter = true)
-data class VelaConfigDto(
+data class VelaConfigResponse(
     @Json(name = "home_directory") val homeDirectory: String,
     val username: String,
 )

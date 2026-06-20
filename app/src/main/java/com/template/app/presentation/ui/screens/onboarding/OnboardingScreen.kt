@@ -158,7 +158,6 @@ fun OnboardingScreen(
                             onTogglePassword = viewModel::toggleShowPassword,
                             onTestConnection = viewModel::testConnection,
                             onSkipOnboarding = {
-                                viewModel.completeOnboarding(isDemo = true)
                                 viewModel.nextPage() // Move to greeting
                             },
                             onContinue = {
@@ -168,7 +167,6 @@ fun OnboardingScreen(
                         3 -> OnboardingStepGreeting(
                             username = "${username?.replaceFirstChar { it.uppercase() }}",
                             onFinish = {
-                                viewModel.completeOnboarding(isDemo = false)
                                 onOnboardingComplete()
                             }
                         )

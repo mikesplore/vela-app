@@ -21,7 +21,7 @@ class ClipboardRepositoryImpl @Inject constructor(
         velaDao.observeClipboard().map { it?.let { VelaClipboard(it.content) } }
 
     override suspend fun readClipboard(): Resource<String> = safeApiCall {
-        val data = apiService.readClipboard().data ?: ""
+        val data = apiService.readClipboard().data ?: "No data fetched"
         velaDao.upsertClipboard(VelaClipboardEntity.fromContent(data))
         data
     }

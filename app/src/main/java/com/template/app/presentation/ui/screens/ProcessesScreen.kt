@@ -14,6 +14,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,16 +43,19 @@ fun ProcessesScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val cs = MaterialTheme.colorScheme
     var processToKill by remember { mutableStateOf<VelaProcess?>(null) }
-    
+
+    // We use the processes directly from the state as the ViewModel
+    // now handles filtering and sorting to ensure consistency with the limit.
+    val processes = state.processes
     val listState = rememberLazyListState()
-    
+
     // Detect when reaching the bottom to load more
     val shouldLoadMore = remember {
         derivedStateOf {
             val totalItemsCount = listState.layoutInfo.totalItemsCount
             val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            // Load more when user is 2 items away from the bottom
-            lastVisibleItemIndex >= totalItemsCount - 2 && totalItemsCount > 0
+            // Trigger load more when user is near the end and we aren't already loading
+            lastVisibleItemIndex >= totalItemsCount - 2 && totalItemsCount > 0 && !state.isLoading
         }
     }
 
@@ -65,14 +70,12 @@ fun ProcessesScreen(
             .fillMaxSize()
             .background(cs.background)
     ) {
-
         // Search Bar
         Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
             OutlinedTextField(
                 value = state.searchQuery,
                 onValueChange = { viewModel.onSearchQueryChanged(it) },
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 placeholder = {
                     Text(
                         "Search processes...",
@@ -128,7 +131,7 @@ fun ProcessesScreen(
                 active = state.sortBy == ProcessesSortType.MEM,
                 onClick = { viewModel.onSortChanged(ProcessesSortType.MEM) }
             )
-            Spacer(Modifier.width(36.dp)) // Alignment offset for the kill button
+            Spacer(Modifier.width(36.dp))
         }
 
         HorizontalDivider(
@@ -137,23 +140,14 @@ fun ProcessesScreen(
             color = cs.outlineVariant.copy(alpha = 0.3f)
         )
 
-        // Process List
-        val filteredList = state.processes.filter {
-            it.name.contains(state.searchQuery, ignoreCase = true)
-        }.let { list ->
-            if (state.sortBy == ProcessesSortType.CPU) list.sortedByDescending { it.cpu }
-            else list.sortedByDescending { it.mem }
-        }
-
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             state = listState
         ) {
-            items(filteredList, key = { it.pid }) { process ->
+            items(processes, key = { it.pid }) { process ->
                 ProcessRow(process, onKill = { processToKill = process })
             }
-            
-            // Show loading or limit message at the bottom
+
             item {
                 Box(
                     modifier = Modifier
@@ -161,11 +155,13 @@ fun ProcessesScreen(
                         .padding(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (filteredList.size >= state.currentLimit) {
+                    // Logic fix: Only show loader if the ViewModel says we are loading.
+                    // If we are not loading, show the count.
+                    if (state.isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    } else if (filteredList.isNotEmpty()) {
+                    } else if (processes.isNotEmpty()) {
                         Text(
-                            text = "End of list (${filteredList.size} processes)",
+                            text = "Showing ${processes.size} processes",
                             style = MaterialTheme.typography.labelSmall,
                             color = cs.onSurfaceVariant.copy(alpha = 0.5f)
                         )
@@ -175,6 +171,7 @@ fun ProcessesScreen(
         }
     }
 
+    // Bottom Sheet for Process Termination
     if (processToKill != null) {
         val process = processToKill!!
         ModalBottomSheet(
@@ -215,7 +212,7 @@ fun ProcessesScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Are you sure you want to kill \"${process.name}\" (PID ${process.pid})? This may cause system instability or data loss.",
+                    text = "Are you sure you want to kill \"${process.name}\" (PID ${process.pid})? This may cause system instability.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = cs.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -230,12 +227,10 @@ fun ProcessesScreen(
                 ) {
                     OutlinedButton(
                         onClick = { processToKill = null },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
+                        modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Cancel", style = MaterialTheme.typography.labelLarge)
+                        Text("Cancel")
                     }
 
                     Button(
@@ -243,15 +238,11 @@ fun ProcessesScreen(
                             viewModel.killProcess(process.pid)
                             processToKill = null
                         },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
+                        modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = cs.error
-                        )
+                        colors = ButtonDefaults.buttonColors(containerColor = cs.error)
                     ) {
-                        Text("Terminate", style = MaterialTheme.typography.labelLarge)
+                        Text("Terminate")
                     }
                 }
             }

@@ -1,5 +1,6 @@
 package com.template.app.core.data.repository
 
+import android.util.Log
 import com.template.app.core.data.local.dao.SettingsDao
 import com.template.app.core.data.local.entities.SettingsEntity
 import com.template.app.domain.model.ConnectionSettings
@@ -20,7 +21,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun saveSettings(settings: ConnectionSettings) {
         val sanitized = settings.copy(
-            baseUrl = settings.baseUrl.trim().removeSuffix("/"),
+            baseUrl = settings.baseUrl.trim(),
             apiToken = settings.apiToken.trim()
         )
         settingsDao.upsert(SettingsEntity.fromDomain(sanitized))

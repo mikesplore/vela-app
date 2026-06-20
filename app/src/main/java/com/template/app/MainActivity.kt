@@ -81,6 +81,7 @@ class MainActivity : ComponentActivity() {
                             // Log the error for debugging
                             Log.e("MainActivity", "Error: ${event.message}")
                         }
+
                         is UiEvent.ShowActionSuccessSnackbar -> {
                             snackbarHostState.showSnackbar(event.message)
                         }
@@ -159,13 +160,6 @@ fun ConnectionStatusIndicator(isConnected: Boolean) {
                     color = if (isConnected) Color(0xFF4CAF50) else Color(0xFFF44336),
                     shape = CircleShape
                 )
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = if (isConnected) "Connected" else "Disconnected",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

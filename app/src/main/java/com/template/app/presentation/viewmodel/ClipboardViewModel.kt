@@ -46,29 +46,30 @@ class ClipboardViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            when (repository.readClipboard()) {
+            val result = repository.readClipboard()
 
-                is Resource.Error -> {
-                    appEventManager.showActionErrorSnackbar("Failed to read clipboard")
-                }
-
-                else -> {}
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to read clipboard")
+                _state.update { it.copy(error = result.message) }
             }
+
+            _state.update { it.copy(isLoading = false) }
         }
     }
+
 
     fun writeClipboard(text: String) {
         viewModelScope.launch {
             appEventManager.setLoading(true)
             _state.update { it.copy(isUpdating = true) }
-            when (repository.writeClipboard(text)) {
-                is Resource.Error -> {
-                    _state.update { it.copy(isUpdating = false) }
-                    appEventManager.showActionErrorSnackbar("Failed to write to clipboard")
-                }
 
-                else -> {}
+            val result = repository.writeClipboard(text)
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to write to clipboard")
             }
+
+            // This must run regardless of success or error
+            _state.update { it.copy(isUpdating = false) }
             appEventManager.setLoading(false)
         }
     }
@@ -77,13 +78,14 @@ class ClipboardViewModel @Inject constructor(
         viewModelScope.launch {
             appEventManager.setLoading(true)
             _state.update { it.copy(isUpdating = true) }
-            when (repository.clearClipboard()) {
-                is Resource.Error -> {
-                    _state.update { it.copy(isUpdating = false) }
-                    appEventManager.showActionErrorSnackbar("Failed to clear clipboard")
-                }
-                else -> {}
+
+            val result = repository.clearClipboard()
+            if (result is Resource.Error) {
+                appEventManager.showActionErrorSnackbar("Failed to clear clipboard")
             }
+
+            // This must run regardless of success or error
+            _state.update { it.copy(isUpdating = false) }
             appEventManager.setLoading(false)
         }
     }

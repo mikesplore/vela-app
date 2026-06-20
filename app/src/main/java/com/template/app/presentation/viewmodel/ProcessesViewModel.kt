@@ -90,22 +90,26 @@ class ProcessesViewModel @Inject constructor(
         _state.update { it.copy(sortBy = sortType) }
     }
 
+    // In ProcessesViewModel.kt
+
     fun loadMore() {
-        // Prevent multiple simultaneous loads
         if (_state.value.isLoading) return
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             try {
-                // Increment the limit which triggers the flatMapLatest in observeData
-                _limit.value += 10
+                // 1. Increase the internal limit
+                val newLimit = _limit.value + 20
+                _limit.value = newLimit
 
-                // CRITICAL: Explicitly tell the repository to fetch more data
-                // if it's a one-shot fetch that feeds a Room/Local flow
+                // 2. Fetch from Network to update Local DB
+                // Note: Your repository needs to support "appending" or "upserting"
+                // rather than "replacing" for true offline-first pagination.
                 velaRepository.getProcesses()
             } catch (e: Exception) {
                 appEventManager.showActionErrorSnackbar("Failed to load more: ${e.message}")
             } finally {
+                // This stops the CircularProgressIndicator
                 _state.update { it.copy(isLoading = false) }
             }
         }
