@@ -3,6 +3,7 @@ package com.template.app.core.di
 import android.content.Context
 import androidx.room.Room
 import com.template.app.core.data.local.AppDatabase
+import com.template.app.core.data.local.dao.AssistantDao
 import com.template.app.core.data.local.dao.SettingsDao
 import com.template.app.core.data.local.dao.UserDao
 import com.template.app.core.data.local.dao.VelaDao
@@ -25,7 +26,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "app_database"
         )
-            .fallbackToDestructiveMigration(false)
+            .fallbackToDestructiveMigration() // Changed to destructive migration since we added entities and bumped version
             .build()
 
     @Provides
@@ -39,4 +40,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideVelaDao(db: AppDatabase): VelaDao = db.velaDao()
+
+    @Provides
+    @Singleton
+    fun provideAssistantDao(db: AppDatabase): AssistantDao = db.assistantDao()
 }

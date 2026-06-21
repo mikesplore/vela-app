@@ -26,17 +26,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.*
 import com.template.app.presentation.ui.Routes
-import com.template.app.presentation.ui.screens.chat.ChatScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onLogout: () -> Unit) {
+fun MainScreen(
+    rootNavController: NavHostController,
+    onLogout: () -> Unit
+) {
     val navController = rememberNavController()
     val sheetState = rememberModalBottomSheetState()
     var showSheet by remember { mutableStateOf(false) }
@@ -50,6 +50,7 @@ fun MainScreen(onLogout: () -> Unit) {
     )
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             NavigationBar(
                 containerColor = colorScheme.background,
@@ -59,17 +60,23 @@ fun MainScreen(onLogout: () -> Unit) {
                 val currentDestination = navBackStackEntry?.destination
 
                 items.forEach { item ->
+                    val isChat = item.route == Routes.CHAT
                     NavigationBarItem(
                         icon = { Icon(item.icon, contentDescription = item.title) },
                         label = { Text(item.title, fontSize = 10.sp) },
                         selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
                         onClick = {
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                            if (isChat) {
+                                // Navigate via rootNavController to take over the whole screen
+                                rootNavController.navigate(item.route)
+                            } else {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
                         },
                         colors = NavigationBarItemDefaults.colors(
@@ -82,7 +89,6 @@ fun MainScreen(onLogout: () -> Unit) {
                     )
                 }
 
-                // More trigger
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.MoreHoriz, contentDescription = "More") },
                     label = { Text("More", fontSize = 10.sp) },
@@ -102,12 +108,10 @@ fun MainScreen(onLogout: () -> Unit) {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Routes.DASHBOARD) { DashboardScreen() }
-            composable(Routes.CHAT) { ChatScreen() }
             composable(Routes.DISPLAY) { DisplayScreen() }
             composable(Routes.MONITOR) { MonitorScreen() }
             composable(Routes.MEDIA) { MediaScreen() }
-            
-            // More menu screens
+
             composable(Routes.FILES) { FilesScreen() }
             composable(Routes.PROCESSES) { ProcessesScreen(onBack = { showSheet = true }) }
             composable(Routes.SECURITY) { SecurityScreen() }
@@ -115,8 +119,8 @@ fun MainScreen(onLogout: () -> Unit) {
             composable(Routes.MAINTENANCE) { MaintenanceScreen(onBack = {navController.popBackStack()}) }
             composable(Routes.NETWORK) { NetworkScreen() }
             composable(Routes.AUDIO){ AudioScreen() }
-            composable(Routes.POWER) { 
-                PowerScreen(onBack = { navController.popBackStack() }) 
+            composable(Routes.POWER) {
+                PowerScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.NETWORK_LOGS) { NetworkLogsScreen() }
             composable(Routes.CLIPBOARD) { ClipboardScreen() }
@@ -148,6 +152,7 @@ fun MainScreen(onLogout: () -> Unit) {
         }
     }
 }
+
 
 @Composable
 fun MoreMenuGrid(onNavigate: (String) -> Unit) {

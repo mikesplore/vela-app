@@ -11,35 +11,12 @@ import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,10 +24,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.template.app.core.utils.UiEvent
 import com.template.app.domain.model.AppThemeMode
 import com.template.app.presentation.ui.AppNavHost
+import com.template.app.presentation.ui.Routes
 import com.template.app.presentation.ui.components.LoadingOverlay
 import com.template.app.presentation.ui.theme.AppTheme
 import com.template.app.presentation.viewmodel.MainViewModel
@@ -73,19 +52,21 @@ class MainActivity : ComponentActivity() {
             val health by viewModel.health.collectAsStateWithLifecycle()
             val isLoading by viewModel.appEventManager.isLoading.collectAsStateWithLifecycle()
             val snackbarHostState = remember { SnackbarHostState() }
+            
+            // Central NavController for root navigation (WhatsApp style)
+            val rootNavController = rememberNavController()
+            val navBackStackEntry by rootNavController.currentBackStackEntryAsState()
+            val currentRoute = navBackStackEntry?.destination?.route
 
             LaunchedEffect(Unit) {
                 viewModel.appEventManager.events.collectLatest { event ->
                     when (event) {
                         is UiEvent.ShowNetworkErrorSnackbar -> {
-                            // Log the error for debugging
                             Log.e("MainActivity", "Error: ${event.message}")
                         }
-
                         is UiEvent.ShowActionSuccessSnackbar -> {
                             snackbarHostState.showSnackbar(event.message)
                         }
-
                         is UiEvent.ShowActionErrorSnackbar -> {
                             snackbarHostState.showSnackbar(event.message)
                         }
@@ -104,9 +85,9 @@ class MainActivity : ComponentActivity() {
                     Scaffold(
                         topBar = {
                             VelaTopBar(
-                                title = "Vela",
-                                showBack = false,
-                                onBack = {},
+                                title = if (currentRoute == Routes.CHAT) "Assistant" else "Vela",
+                                showBack = currentRoute == Routes.CHAT,
+                                onBack = { rootNavController.popBackStack() },
                                 trailing = {
                                     ConnectionStatusIndicator(isConnected = health != null)
                                 }
@@ -119,11 +100,9 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxSize()
                                 .padding(innerPadding)
                         ) {
-                            val navController = rememberNavController()
-
                             startDestination?.let { destination ->
                                 AppNavHost(
-                                    navController = navController,
+                                    navController = rootNavController,
                                     startDestination = destination
                                 )
                             }
@@ -199,7 +178,7 @@ fun VelaTopBar(
             }
             Text(
                 text = title,
-                fontSize = 30.sp,
+                fontSize = MaterialTheme.typography.titleLarge.fontSize,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )

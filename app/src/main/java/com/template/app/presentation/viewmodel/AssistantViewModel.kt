@@ -50,6 +50,12 @@ class AssistantViewModel @Inject constructor(
         val text = _state.value.inputText.trim()
         if (text.isEmpty() || _state.value.isLoading) return
 
+        if (text.lowercase() == "clear") {
+            _state.update { it.copy(inputText = "") }
+            clearChat()
+            return
+        }
+
         viewModelScope.launch {
             _state.update { it.copy(inputText = "", isLoading = true) }
             val result = repository.sendMessage(text)

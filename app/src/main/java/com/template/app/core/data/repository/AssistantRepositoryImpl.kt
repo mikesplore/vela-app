@@ -1,5 +1,7 @@
 package com.template.app.core.data.repository
 
+import com.template.app.core.data.local.dao.AssistantDao
+import com.template.app.core.data.local.entities.AssistantMessageEntity
 import com.template.app.core.data.remote.api.VelaApiService
 import com.template.app.core.data.remote.dto.AssistantRequest
 import com.template.app.core.data.remote.dto.AssistantResponse
@@ -10,27 +12,28 @@ import com.template.app.domain.model.AssistantChatMessage
 import com.template.app.domain.model.AssistantConfirmation
 import com.template.app.domain.repository.AssistantRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class AssistantRepositoryImpl @Inject constructor(
-    private val apiService: VelaApiService
+    private val apiService: VelaApiService,
+    private val assistantDao: AssistantDao
 ) : AssistantRepository {
 
     private val sessionId = UUID.randomUUID().toString()
-    private val _messages = MutableStateFlow<List<AssistantChatMessage>>(emptyList())
 
-    override fun observeMessages(): Flow<List<AssistantChatMessage>> = _messages.asStateFlow()
+    override fun observeMessages(): Flow<List<AssistantChatMessage>> = 
+        assistantDao.observeMessages().map { entities ->
+            entities.map { it.toDomain() }
+        }
 
     override suspend fun sendMessage(message: String): Resource<Unit> = safeApiCall {
-        // Add user message to list
+        // Add user message to local cache
         val userMsg = AssistantChatMessage(text = message, isUser = true)
-        _messages.update { it + userMsg }
+        assistantDao.upsertMessage(AssistantMessageEntity.fromDomain(userMsg))
 
         val response = apiService.assistantChat(
             sessionId = sessionId,
@@ -38,12 +41,13 @@ class AssistantRepositoryImpl @Inject constructor(
         )
 
         val assistantMsg = response.toDomain()
-        _messages.update { it + assistantMsg }
+        // Add assistant response to local cache
+        assistantDao.upsertMessage(AssistantMessageEntity.fromDomain(assistantMsg))
         Unit
     }
 
     override suspend fun clearChat() {
-        _messages.value = emptyList()
+        assistantDao.clearChat()
     }
 
     private fun AssistantResponse.toDomain(): AssistantChatMessage {

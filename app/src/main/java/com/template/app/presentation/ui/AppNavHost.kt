@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.template.app.presentation.ui.screens.*
+import com.template.app.presentation.ui.screens.chat.ChatScreen
 import com.template.app.presentation.ui.screens.onboarding.OnboardingScreen
 
 // ──── Route constants ─────────────────────────────────────────────────────────
@@ -61,6 +62,7 @@ fun AppNavHost(
 
         composable(Routes.MAIN) {
             MainScreen(
+                rootNavController = navController,
                 onLogout = {
                     navController.navigate(Routes.ONBOARDING) {
                         popUpTo(Routes.MAIN) { inclusive = true }
@@ -69,5 +71,8 @@ fun AppNavHost(
             )
         }
 
+        composable(Routes.CHAT) {
+            ChatScreen(onBack = { navController.popBackStack() })
+        }
     }
 }

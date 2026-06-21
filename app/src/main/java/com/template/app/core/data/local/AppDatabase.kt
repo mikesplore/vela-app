@@ -3,6 +3,7 @@ package com.template.app.core.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.template.app.core.data.local.dao.AssistantDao
 import com.template.app.core.data.local.dao.SettingsDao
 import com.template.app.core.data.local.dao.UserDao
 import com.template.app.core.data.local.dao.VelaDao
@@ -47,9 +48,10 @@ import com.template.app.core.data.local.entities.*
         VelaConfigEntity::class,
         VelaWifiNetworkEntity::class,
         VelaBluetoothEntity::class,
-        VelaBluetoothDeviceEntity::class
+        VelaBluetoothDeviceEntity::class,
+        AssistantMessageEntity::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -57,4 +59,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun settingsDao(): SettingsDao
     abstract fun velaDao(): VelaDao
+    abstract fun assistantDao(): AssistantDao
 }
