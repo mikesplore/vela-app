@@ -20,6 +20,9 @@ interface VelaApiService {
     @GET("ping")
     suspend fun ping(): PingResponse
 
+    @GET("system/device")
+    suspend fun getDevice(): DeviceResponse
+
     // ── Display ───────────────────────────────────────────────────────────────
 
     @GET("display/screenshot")
@@ -186,6 +189,9 @@ interface VelaApiService {
     @POST("network/ping")
     suspend fun pingHost(@Body body: PingHostRequest): PingHostResponse
 
+    @GET("network/usage")
+    suspend fun getNetworkUsage(@Query("period") period: String? = null): NetUsageResponse
+
     @GET("network/speed-test")
     suspend fun speedTest(): SpeedTestResponse
 
@@ -273,6 +279,9 @@ interface VelaApiService {
     suspend fun closeWindow(@Body body: WindowActionRequest): GenericResponse
 
     // ── Monitor ─────────────────────────────────────────────────────────────
+
+    @GET("monitor/uptime")
+    suspend fun getUptime(): UptimeResponse
 
     @GET("monitor/snapshot")
     suspend fun getMonitorSnapshot(): MonitorSnapshotResponse

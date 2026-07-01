@@ -6,6 +6,38 @@ data class VelaHealth(
     val version: String = "1.2.4"
 )
 
+data class VelaDevice(
+    val laptopModel: String?,
+    val hardwareVendor: String?,
+    val osDistro: String?,
+    val osDistroVersion: String?,
+    val kernel: String?,
+    val architecture: String?,
+    val hostname: String?,
+    val prettyHostname: String?
+)
+
+data class VelaUptime(
+    val seconds: Int,
+    val minutes: Int?,
+    val hours: Int?,
+    val days: Int?,
+    val weeks: Int?,
+    val months: Int?,
+    val years: Int?,
+    val formatted: String
+)
+
+data class NetUsage(
+    val interfaceName: String,
+    val period: String,
+    val receivedBytes: Long,
+    val transmittedBytes: Long,
+    val received: String,
+    val transmitted: String
+)
+
+
 data class VelaNetworkInfo(
     val localIp: String,
     val publicIp: String?,

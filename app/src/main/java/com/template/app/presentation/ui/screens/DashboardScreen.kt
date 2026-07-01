@@ -66,15 +66,13 @@ fun DashboardScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
 
-            state.health?.let { health ->
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 4 }
-                ) {
-                    StatusCard(
-                        health = health
-                    )
-                }
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 4 }
+            ) {
+                StatusCard(
+                    uptime = state.uptime
+                )
             }
 
             state.network?.let { network ->

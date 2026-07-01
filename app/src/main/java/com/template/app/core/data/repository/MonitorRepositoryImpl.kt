@@ -52,6 +52,25 @@ class MonitorRepositoryImpl @Inject constructor(
     override fun observeTopProcessesByMemory(limit: Int): Flow<List<VelaProcess>> =
         velaDao.observeProcessesByMemory(limit).map { list -> list.map { it.toDomain() } }
 
+    override fun observeUptime(): Flow<VelaUptime?> =
+        velaDao.observeUptime().map { it?.toDomain() }
+
+    override suspend fun getUptime(): Resource<VelaUptime> = safeApiCall {
+        val res = apiService.getUptime()
+        val domain = VelaUptime(
+            seconds = res.seconds,
+            minutes = res.minutes,
+            hours = res.hours,
+            days = res.days,
+            weeks = res.weeks,
+            months = res.months,
+            years = res.years,
+            formatted = res.formatted
+        )
+        velaDao.upsertUptime(VelaUptimeEntity.fromDomain(domain))
+        domain
+    }
+
     override suspend fun getCpuUsage(): Resource<VelaCpuUsage> = safeApiCall {
         val res = apiService.getMonitorCpu()
         val domain = VelaCpuUsage(res.overall ?: 0.0, res.perCore ?: emptyList())
@@ -130,9 +149,6 @@ class MonitorRepositoryImpl @Inject constructor(
         val cpuProcDomains = res.processes?.topByCpu?.map { it.toDomain() } ?: emptyList()
         val memProcDomains = res.processes?.topByMemory?.map { it.toDomain() } ?: emptyList()
 
-        // generic sensors could be added here if available in snapshot
-        val sensorDomains = emptyList<VelaSensorInfo>()
-
         // Sync to Room
         velaDao.upsertCpuUsage(VelaCpuUsageEntity.fromDomain(cpuDomain))
         velaDao.upsertRamUsage(VelaRamUsageEntity.fromDomain(ramDomain))
@@ -141,7 +157,6 @@ class MonitorRepositoryImpl @Inject constructor(
         velaDao.replaceNetworkIo(networkIoDomains.map { VelaNetworkIoEntity.fromDomain(it) })
         velaDao.replaceTemperatures(tempDomains.map { VelaTemperatureEntity.fromDomain(it) })
         velaDao.replaceFans(fanDomains.map { VelaFanEntity.fromDomain(it) })
-        velaDao.replaceSensors(sensorDomains.map { VelaSensorEntity.fromDomain(it) })
 
         if (batteryDomain != null) velaDao.upsertBattery(VelaBatteryEntity.fromDomain(batteryDomain))
         velaDao.replaceCpuProcesses(cpuProcDomains.map {
@@ -168,7 +183,7 @@ class MonitorRepositoryImpl @Inject constructor(
             battery = batteryDomain,
             topProcessesByCpu = cpuProcDomains,
             topProcessesByMemory = memProcDomains,
-            sensors = sensorDomains
+            sensors = emptyList()
         )
     }
 

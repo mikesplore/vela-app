@@ -22,6 +22,7 @@ import com.template.app.core.data.local.entities.*
         UserEntity::class,
         SettingsEntity::class,
         VelaHealthEntity::class,
+        VelaDeviceEntity::class,
         VelaNetworkEntity::class,
         VelaAudioEntity::class,
         VelaAudioDeviceEntity::class,
@@ -49,9 +50,11 @@ import com.template.app.core.data.local.entities.*
         VelaWifiNetworkEntity::class,
         VelaBluetoothEntity::class,
         VelaBluetoothDeviceEntity::class,
-        AssistantMessageEntity::class
+        AssistantMessageEntity::class,
+        VelaUptimeEntity::class,
+        NetUsageEntity::class
     ],
-    version = 23,
+    version = 25,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

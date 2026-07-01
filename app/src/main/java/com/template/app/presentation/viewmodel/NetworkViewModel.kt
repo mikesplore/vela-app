@@ -17,10 +17,13 @@ data class NetworkState(
     val bluetoothStatus: VelaBluetoothStatus? = null,
     val pingResult: VelaPingResult? = null,
     val speedTest: VelaSpeedTest? = null,
+    val netUsage: NetUsage? = null,
+    val selectedPeriod: String = "day",
     val isWifiToggling: Boolean = false,
     val isPinging: Boolean = false,
     val isSpeedTesting: Boolean = false,
     val isBluetoothLoading: Boolean = false,
+    val isUsageLoading: Boolean = false,
     val error: String? = null
 )
 
@@ -50,13 +53,26 @@ class NetworkViewModel @Inject constructor(
         velaRepository.observeBluetooth()
             .onEach { status -> _state.update { it.copy(bluetoothStatus = status) } }
             .launchIn(viewModelScope)
+
+        velaRepository.observeNetUsage()
+            .onEach { usage -> _state.update { it.copy(netUsage = usage) } }
+            .launchIn(viewModelScope)
     }
 
     fun refresh() {
         viewModelScope.launch {
             velaRepository.getNetworkLocation()
             velaRepository.getWifiStatus()
+            fetchNetworkUsage(_state.value.selectedPeriod)
             fetchBluetoothDevices()
+        }
+    }
+
+    fun fetchNetworkUsage(period: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isUsageLoading = true, selectedPeriod = period) }
+            velaRepository.getNetworkUsage(period)
+            _state.update { it.copy(isUsageLoading = false) }
         }
     }
 

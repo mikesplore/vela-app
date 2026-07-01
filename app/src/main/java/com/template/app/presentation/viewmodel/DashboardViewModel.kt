@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.template.app.core.sync.DataSyncManager
 import com.template.app.core.utils.AppEventManager
 import com.template.app.core.utils.Resource
 import com.template.app.domain.model.*
@@ -16,10 +15,8 @@ import com.template.app.domain.repository.MediaRepository
 import com.template.app.domain.repository.MonitorRepository
 import com.template.app.domain.repository.NetworkRepository
 import com.template.app.domain.repository.ProcessesRepository
-import com.template.app.domain.usecase.ClearSettingsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -29,6 +26,7 @@ data class DashboardState(
     val isConnected: Boolean = false,
     val isRefreshing: Boolean = false,
     val health: VelaHealth? = null,
+    val uptime: VelaUptime? = null,
     val network: VelaNetworkInfo? = null,
     val wifi: VelaWifiStatus? = null,
     val resolution: VelaResolution? = null,
@@ -43,12 +41,9 @@ data class DashboardState(
     val disks: List<VelaDiskUsage> = emptyList(),
     val clipboardText: String = "",
     val error: String? = null,
-    val uptimeSeconds: Long = 0,
     val isScreenshotLoading: Boolean = false,
     val screenshot: Bitmap? = null
 )
-
-
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
@@ -68,10 +63,8 @@ class DashboardViewModel @Inject constructor(
 
     private val _processLimit = MutableStateFlow(5)
 
-
     init {
         observeData()
-        startUptimeTicking()
     }
 
     fun setFabVisible(visible: Boolean) {
@@ -80,15 +73,17 @@ class DashboardViewModel @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeData() {
-        // Observe all data streams from Room DB
         healthRepository.observeHealth()
             .onEach { health -> 
                 _state.update { it.copy(
                     health = health, 
-                    uptimeSeconds = health?.uptimeSeconds ?: it.uptimeSeconds,
                     isConnected = health != null
                 ) } 
             }
+            .launchIn(viewModelScope)
+
+        monitorRepository.observeUptime()
+            .onEach { uptime -> _state.update { it.copy(uptime = uptime) } }
             .launchIn(viewModelScope)
 
         networkRepository.observeNetwork()
@@ -135,22 +130,10 @@ class DashboardViewModel @Inject constructor(
             .onEach { ram -> ram?.let { usage -> _state.update { it.copy(ramUsage = usage.percent) } } }
             .launchIn(viewModelScope)
 
-
         _processLimit
             .flatMapLatest { limit -> processRepository.observeProcesses(limit) }
             .onEach { processes -> _state.update { it.copy(processes = processes) } }
             .launchIn(viewModelScope)
-    }
-
-    private fun startUptimeTicking() {
-        viewModelScope.launch {
-            while (true) {
-                delay(1000)
-                if (_state.value.isConnected) {
-                    _state.update { it.copy(uptimeSeconds = it.uptimeSeconds + 1) }
-                }
-            }
-        }
     }
 
     fun toggleProcessLimit() {
@@ -206,9 +189,7 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun takeScreenshot() {
-        // Start loading immediately
         _state.update { it.copy(isScreenshotLoading = true, screenshot = null) }
-
         viewModelScope.launch {
             try {
                 when (val res = displayRepository.getScreenshot()) {
@@ -238,11 +219,8 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun dismissScreenshot() {
-        // Clear both states when dismissing
         _state.update { it.copy(screenshot = null, isScreenshotLoading = false) }
     }
-
-
 
     private fun formatBytes(bytesStr: String?): String {
         if (bytesStr.isNullOrBlank() || bytesStr == "0") return "0.0 B"

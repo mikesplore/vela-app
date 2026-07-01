@@ -75,7 +75,9 @@ class DataSyncManager @Inject constructor(
                     launch { networkRepository.getBluetoothDevices() },
                     launch { schedulerRepository.getScheduledTasks() },
                     launch { powerRepository.getPowerProfile() },
-                    launch { clipboardRepository.readClipboard() }
+                    launch { clipboardRepository.readClipboard() },
+                    launch { monitorRepository.getUptime()},
+                    launch { monitorRepository.getMonitorSnapshot() },
 
                 )
                 tasks.joinAll()

@@ -6,6 +6,18 @@ import com.squareup.moshi.JsonClass
 // ── General ──
 
 @JsonClass(generateAdapter = true)
+data class DeviceResponse(
+    @Json(name = "laptop_model") val laptopModel: String? = null,
+    @Json(name = "hardware_vendor") val hardwareVendor: String? = null,
+    @Json(name = "os_distro") val osDistro: String? = null,
+    @Json(name = "os_distro_version") val osDistroVersion: String? = null,
+    val kernel: String? = null,
+    val architecture: String? = null,
+    val hostname: String? = null,
+    @Json(name = "pretty_hostname") val prettyHostname: String? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class RootResponse(
     val name: String? = null,
     val version: String? = null,
@@ -632,4 +644,26 @@ data class ServiceActionRequest(
 data class VelaConfigResponse(
     @Json(name = "home_directory") val homeDirectory: String,
     val username: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class UptimeResponse(
+    val seconds: Int,
+    val minutes: Int?,
+    val hours: Int?,
+    val days: Int?,
+    val weeks: Int?,
+    val months: Int?,
+    val years: Int?,
+    val formatted: String
+)
+
+@JsonClass(generateAdapter = true)
+data class NetUsageResponse(
+    @Json(name = "interface") val interfaceName: String,
+    val period: String,
+    @Json(name = "received_bytes") val receivedBytes: Long,
+    @Json(name = "transmitted_bytes") val transmittedBytes: Long,
+    val received: String,
+    val transmitted: String
 )

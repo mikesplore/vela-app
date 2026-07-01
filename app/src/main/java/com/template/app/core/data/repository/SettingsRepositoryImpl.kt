@@ -1,6 +1,7 @@
 package com.template.app.core.data.repository
 
-import android.util.Log
+import com.template.app.core.data.local.AppDatabase
+import com.template.app.core.data.local.UserPreferencesDataStore
 import com.template.app.core.data.local.dao.SettingsDao
 import com.template.app.core.data.local.entities.SettingsEntity
 import com.template.app.domain.model.ConnectionSettings
@@ -10,7 +11,9 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class SettingsRepositoryImpl @Inject constructor(
-    private val settingsDao: SettingsDao
+    private val settingsDao: SettingsDao,
+    private val database: AppDatabase,
+    private val userPreferencesDataStore: UserPreferencesDataStore
 ) : SettingsRepository {
 
     override fun observeSettings(): Flow<ConnectionSettings> =
@@ -28,7 +31,8 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun clearSettings() {
-        settingsDao.deleteSettings()
+        database.clearAllTables()
+        userPreferencesDataStore.clearAll()
     }
 
     override suspend fun completeOnboarding() {

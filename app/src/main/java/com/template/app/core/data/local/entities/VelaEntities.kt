@@ -3,6 +3,7 @@ package com.template.app.core.data.local.entities
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.template.app.domain.model.*
+import java.time.Period
 
 @Entity(tableName = "vela_health")
 data class VelaHealthEntity(
@@ -13,6 +14,74 @@ data class VelaHealthEntity(
     fun toDomain() = VelaHealth(status, uptimeSeconds)
     companion object {
         fun fromDomain(domain: VelaHealth) = VelaHealthEntity(id = 0, status = domain.status, uptimeSeconds = domain.uptimeSeconds)
+    }
+}
+
+
+@Entity(tableName = "vela_uptime")
+data class VelaUptimeEntity(
+    @PrimaryKey val id: Int = 0,
+    val seconds: Int,
+    val minutes: Int?,
+    val hours: Int?,
+    val days: Int?,
+    val weeks: Int?,
+    val months: Int?,
+    val years: Int?,
+    val formatted: String
+) {
+    fun toDomain() = VelaUptime(seconds, minutes, hours, days, weeks, months, years, formatted)
+    companion object {
+        fun fromDomain(domain: VelaUptime) = VelaUptimeEntity(id = 0, seconds = domain.seconds, minutes = domain.minutes, hours = domain.hours, days = domain.days, weeks = domain.weeks, months = domain.months, years = domain.years, formatted = domain.formatted)
+    }
+}
+
+@Entity
+data class NetUsageEntity(
+    @PrimaryKey val id: Int = 0,
+    val interfaceName: String,
+    val period: String,
+    val receivedBytes: Long,
+    val transmittedBytes: Long,
+    val received: String,
+    val transmitted: String
+) {
+    fun toDomain() = NetUsage(interfaceName, period, receivedBytes, transmittedBytes, received, transmitted)
+    companion object {
+        fun fromDomain(domain: NetUsage) = NetUsageEntity(id = 0, interfaceName = domain.interfaceName, period = domain.period, receivedBytes = domain.receivedBytes, transmittedBytes = domain.transmittedBytes, transmitted = domain.transmitted, received = domain.received)
+
+    }
+}
+
+
+@Entity(tableName = "vela_device")
+data class VelaDeviceEntity(
+    @PrimaryKey val id: Int = 0,
+    val laptopModel: String?,
+    val hardwareVendor: String?,
+    val osDistro: String?,
+    val osDistroVersion: String?,
+    val kernel: String?,
+    val architecture: String?,
+    val hostname: String?,
+    val prettyHostname: String?
+) {
+    fun toDomain() = VelaDevice(
+        laptopModel, hardwareVendor, osDistro, osDistroVersion,
+        kernel, architecture, hostname, prettyHostname
+    )
+    companion object {
+        fun fromDomain(domain: VelaDevice) = VelaDeviceEntity(
+            id = 0,
+            laptopModel = domain.laptopModel,
+            hardwareVendor = domain.hardwareVendor,
+            osDistro = domain.osDistro,
+            osDistroVersion = domain.osDistroVersion,
+            kernel = domain.kernel,
+            architecture = domain.architecture,
+            hostname = domain.hostname,
+            prettyHostname = domain.prettyHostname
+        )
     }
 }
 

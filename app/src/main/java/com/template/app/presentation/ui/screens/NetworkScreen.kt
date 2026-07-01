@@ -1,13 +1,10 @@
 package com.template.app.presentation.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.Bluetooth
@@ -23,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -86,6 +82,46 @@ fun NetworkScreen(
                     InfoRow(label = "Coordinates", value = "${loc.lat}, ${loc.lon}")
                 } else {
                     InfoRow(label = "Location", value = "---")
+                }
+            }
+        }
+
+        item { SectionDivider() }
+
+        // Usage Section
+        item {
+            NetworkSection(label = "DATA USAGE") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("hour", "day", "month").forEach { period ->
+                        FilterChip(
+                            selected = state.selectedPeriod == period,
+                            onClick = { viewModel.fetchNetworkUsage(period) },
+                            label = { Text(period.replaceFirstChar { it.uppercase() }) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                if (state.isUsageLoading) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+                }
+
+                state.netUsage?.let { usage ->
+                    UsageRow(label = "Received", value = usage.received, icon = Icons.Default.Download, color = cs.primary)
+                    UsageRow(label = "Transmitted", value = usage.transmitted, icon = Icons.Default.Upload, color = cs.secondary)
+                    Text(
+                        text = "Interface: ${usage.interfaceName}",
+                        fontSize = 11.sp,
+                        color = cs.onSurfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                } ?: run {
+                    if (!state.isUsageLoading) {
+                        Text("Usage data unavailable", fontSize = 13.sp, color = cs.onSurfaceVariant)
+                    }
                 }
             }
         }
@@ -262,124 +298,22 @@ fun NetworkScreen(
                 }
             }
         }
+    }
+}
 
-        item { SectionDivider() }
-
-        // Ping Section
-        item {
-            NetworkSection(label = "PING") {
-                var host by remember { mutableStateOf("") }
-                var count by remember { mutableStateOf("4") }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    OutlinedTextField(
-                        value = host,
-                        onValueChange = { host = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("google.com", fontSize = 13.sp) },
-                        shape = RoundedCornerShape(10.dp),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = count,
-                        onValueChange = { count = it },
-                        modifier = Modifier.width(64.dp),
-                        placeholder = { Text("4", fontSize = 13.sp) },
-                        shape = RoundedCornerShape(10.dp),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
-                    Button(
-                        onClick = { viewModel.pingHost(host, count.toIntOrNull() ?: 4) },
-                        enabled = !state.isPinging,
-                        modifier = Modifier.height(56.dp),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        if (state.isPinging) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        } else {
-                            Text("Ping")
-                        }
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    PingResultBox(
-                        label = "Loss",
-                        value = "${state.pingResult?.lossPercent ?: 0.0}%",
-                        isGood = (state.pingResult?.lossPercent ?: 0.0) == 0.0,
-                        modifier = Modifier.weight(1f)
-                    )
-                    PingResultBox(
-                        label = "Avg RTT",
-                        value = "${state.pingResult?.avgRttMs ?: 0.0} ms",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
+@Composable
+private fun UsageRow(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = color.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(text = label, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-
-        item { SectionDivider() }
-
-        // Speed Test Section
-        item {
-            NetworkSection(label = "SPEED TEST") {
-                Surface(
-                    modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    color = cs.surfaceVariant.copy(alpha = 0.2f),
-                    border = BorderStroke(0.5.dp, cs.outlineVariant.copy(alpha = 0.2f))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            SpeedStat(
-                                label = "Download",
-                                value = state.speedTest?.downloadMbps?.toString() ?: "0.0",
-                                unit = "Mbps",
-                                isPrimary = true,
-                                modifier = Modifier.weight(1f)
-                            )
-                            SpeedStat(
-                                label = "Upload",
-                                value = state.speedTest?.uploadMbps?.toString() ?: "0.0",
-                                unit = "Mbps",
-                                modifier = Modifier.weight(1f)
-                            )
-                            SpeedStat(
-                                label = "Ping",
-                                value = state.speedTest?.pingMs?.toString() ?: "0.0",
-                                unit = "ms",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(Modifier.height(14.dp))
-                        Button(
-                            onClick = { viewModel.runSpeedTest() },
-                            enabled = !state.isSpeedTesting,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            if (state.isSpeedTesting) {
-                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                            } else {
-                                Text("Run speed test")
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        Text(text = value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = color, fontFamily = FontFamily.Monospace)
     }
 }
 
@@ -473,27 +407,6 @@ private fun BluetoothItem(
                 Text("Pair", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = cs.primary, modifier = Modifier.clickable { onPair() })
             }
         }
-    }
-}
-
-@Composable
-private fun PingResultBox(label: String, value: String, isGood: Boolean = false, modifier: Modifier = Modifier) {
-    val cs = MaterialTheme.colorScheme
-    Surface(modifier = modifier, shape = RoundedCornerShape(10.dp), color = cs.surfaceVariant.copy(alpha = 0.15f)) {
-        Column(modifier = Modifier.padding(10.dp, 12.dp)) {
-            Text(text = label.uppercase(), fontSize = 9.sp, color = cs.onSurfaceVariant.copy(alpha = 0.5f))
-            Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (isGood) Color(0xFF6FCB72) else cs.onSurface.copy(alpha = 0.88f))
-        }
-    }
-}
-
-@Composable
-private fun SpeedStat(label: String, value: String, unit: String, isPrimary: Boolean = false, modifier: Modifier = Modifier) {
-    val cs = MaterialTheme.colorScheme
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = if (isPrimary) cs.primary else cs.onSurface.copy(alpha = 0.9f))
-        Text(text = unit, fontSize = 9.sp, color = cs.onSurfaceVariant.copy(alpha = 0.4f))
-        Text(text = label, fontSize = 10.sp, color = cs.onSurfaceVariant.copy(alpha = 0.5f))
     }
 }
 

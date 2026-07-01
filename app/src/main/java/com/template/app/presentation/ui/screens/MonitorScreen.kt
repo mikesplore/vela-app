@@ -72,7 +72,6 @@ fun MonitorScreen(
     ) {
         MonitorContent(
             state = state,
-            onIntervalChange = { viewModel.setUpdateInterval(it) }
         )
     }
 }
@@ -80,19 +79,12 @@ fun MonitorScreen(
 @Composable
 private fun MonitorContent(
     state: MonitorState,
-    onIntervalChange: (Long) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            IntervalSelector(
-                currentInterval = state.updateIntervalMs,
-                onIntervalChange = onIntervalChange
-            )
-        }
 
         item {
             ProcessorSection(state.cpu, state.ram)
@@ -129,68 +121,6 @@ private fun MonitorContent(
         item {
             Spacer(modifier = Modifier.height(32.dp))
         }
-    }
-}
-
-@Composable
-private fun IntervalSelector(
-    currentInterval: Long,
-    onIntervalChange: (Long) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Refresh,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            "Update interval",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            IntervalPill(
-                label = "1s",
-                active = currentInterval == 1000L
-            ) { onIntervalChange(1000L) }
-            IntervalPill(
-                label = "2s",
-                active = currentInterval == 2000L
-            ) { onIntervalChange(2000L) }
-            IntervalPill(
-                label = "5s",
-                active = currentInterval == 5000L
-            ) { onIntervalChange(5000L) }
-        }
-    }
-}
-
-@Composable
-private fun IntervalPill(
-    label: String,
-    active: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(
-            alpha = 0.3f
-        ),
-        contentColor = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium
-        )
     }
 }
 

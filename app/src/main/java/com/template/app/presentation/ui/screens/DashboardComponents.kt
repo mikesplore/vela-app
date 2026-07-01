@@ -53,9 +53,6 @@ private fun signalColor(signal: Int, cs: ColorScheme): Color = when {
 }
 
 // ─── Base card ────────────────────────────────────────────────────────────────
-//
-// VelaCard is now transparent to match the screen's background gradient, making
-// the dashboard feel lighter and more integrated.
 
 @Composable
 private fun VelaCard(
@@ -75,7 +72,7 @@ private fun VelaCard(
 
 @Composable
 fun StatusCard(
-    health: VelaHealth
+    uptime: VelaUptime?
 ) {
     VelaCard {
         Column(
@@ -85,7 +82,7 @@ fun StatusCard(
             SectionHeader("System uptime")
             Spacer(Modifier.height(8.dp))
             Text(
-                text = formatUptime(health.uptimeSeconds),
+                text = uptime?.formatted ?: "00:00:00",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 52.sp,
                 fontFamily = FontFamily.Monospace,
@@ -575,13 +572,4 @@ fun ScreenshotSheet(
             }
         }
     }
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-private fun formatUptime(seconds: Long): String {
-    val hrs = seconds / 3600
-    val mins = (seconds % 3600) / 60
-    val secs = seconds % 60
-    return String.format(Locale.ROOT, "%02d:%02d:%02d", hrs, mins, secs)
 }

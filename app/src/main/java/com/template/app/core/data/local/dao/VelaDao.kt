@@ -19,6 +19,27 @@ interface VelaDao {
     @Query("DELETE FROM vela_health")
     suspend fun clearHealth()
 
+    @Query("SELECT * FROM vela_uptime WHERE id = 0")
+    fun observeUptime(): Flow<VelaUptimeEntity?>
+
+    @Upsert
+    suspend fun upsertUptime(uptime: VelaUptimeEntity)
+
+    @Query("SELECT * FROM NetUsageEntity WHERE id = 0")
+    fun observeNetUsage(): Flow<NetUsageEntity?>
+
+    @Upsert
+    suspend fun upsertNetUsage(netUsage: NetUsageEntity)
+
+    @Query("SELECT * FROM vela_device WHERE id = 0")
+    fun observeDevice(): Flow<VelaDeviceEntity?>
+
+    @Upsert
+    suspend fun upsertDevice(device: VelaDeviceEntity)
+
+    @Query("DELETE FROM vela_device")
+    suspend fun clearDevice()
+
     @Query("SELECT * FROM vela_network WHERE id = 0")
     fun observeNetwork(): Flow<VelaNetworkEntity?>
 
@@ -26,7 +47,7 @@ interface VelaDao {
     suspend fun upsertNetwork(network: VelaNetworkEntity)
 
     @Query("DELETE FROM vela_network")
-    suspend fun clearNetwork()
+    fun clearNetwork()
 
     @Query("SELECT * FROM vela_audio WHERE id = 0")
     fun observeAudio(): Flow<VelaAudioEntity?>
@@ -43,11 +64,16 @@ interface VelaDao {
     @Query("DELETE FROM vela_audio_devices")
     suspend fun clearAudioDevices()
 
+    @Query("DELETE FROM vela_audio_devices WHERE id NOT IN (:ids)")
+    suspend fun deleteAudioDevicesExcept(ids: List<String>)
+
     @Transaction
     suspend fun replaceAudioDevices(devices: List<VelaAudioDeviceEntity>) {
-        clearAudioDevices()
-        if (devices.isNotEmpty()) {
+        if (devices.isEmpty()) {
+            clearAudioDevices()
+        } else {
             upsertAudioDevices(devices)
+            deleteAudioDevicesExcept(devices.map { it.id })
         }
     }
 
@@ -75,6 +101,12 @@ interface VelaDao {
     @Query("DELETE FROM vela_processes WHERE isTopByMemory = 1")
     suspend fun clearMemoryProcesses()
 
+    @Query("DELETE FROM vela_processes WHERE isTopByMemory = 0 AND id NOT IN (:ids)")
+    suspend fun deleteCpuProcessesExcept(ids: List<String>)
+
+    @Query("DELETE FROM vela_processes WHERE isTopByMemory = 1 AND id NOT IN (:ids)")
+    suspend fun deleteMemoryProcessesExcept(ids: List<String>)
+
     @Transaction
     suspend fun replaceCpuProcesses(processes: List<VelaProcessEntity>) {
         clearCpuProcesses()
@@ -82,6 +114,7 @@ interface VelaDao {
             upsertProcesses(processes)
         }
     }
+
 
     @Transaction
     suspend fun replaceMemoryProcesses(processes: List<VelaProcessEntity>) {
@@ -93,9 +126,11 @@ interface VelaDao {
 
     @Transaction
     suspend fun replaceProcesses(processes: List<VelaProcessEntity>) {
-        clearProcesses()
-        if (processes.isNotEmpty()) {
+        if (processes.isEmpty()) {
+            clearProcesses()
+        } else {
             upsertProcesses(processes)
+
         }
     }
 
@@ -108,11 +143,16 @@ interface VelaDao {
     @Query("DELETE FROM vela_disks")
     suspend fun clearDisks()
 
+    @Query("DELETE FROM vela_disks WHERE mountpoint NOT IN (:mountpoints)")
+    suspend fun deleteDisksExcept(mountpoints: List<String>)
+
     @Transaction
     suspend fun replaceDisks(disks: List<VelaDiskEntity>) {
-        clearDisks()
-        if (disks.isNotEmpty()) {
+        if (disks.isEmpty()) {
+            clearDisks()
+        } else {
             upsertDisks(disks)
+            deleteDisksExcept(disks.map { it.mountpoint })
         }
     }
 
@@ -125,11 +165,16 @@ interface VelaDao {
     @Query("DELETE FROM vela_notifications")
     suspend fun clearNotifications()
 
+    @Query("DELETE FROM vela_notifications WHERE id NOT IN (:ids)")
+    suspend fun deleteNotificationsExcept(ids: List<String>)
+
     @Transaction
     suspend fun replaceNotifications(notifications: List<VelaNotificationEntity>) {
-        clearNotifications()
-        if (notifications.isNotEmpty()) {
+        if (notifications.isEmpty()) {
+            clearNotifications()
+        } else {
             upsertNotifications(notifications)
+            deleteNotificationsExcept(notifications.map { it.id })
         }
     }
 
@@ -150,11 +195,16 @@ interface VelaDao {
     @Query("DELETE FROM vela_wifi_networks")
     suspend fun clearWifiNetworks()
 
+    @Query("DELETE FROM vela_wifi_networks WHERE ssid NOT IN (:ssids)")
+    suspend fun deleteWifiNetworksExcept(ssids: List<String>)
+
     @Transaction
     suspend fun replaceWifiNetworks(networks: List<VelaWifiNetworkEntity>) {
-        clearWifiNetworks()
-        if (networks.isNotEmpty()) {
+        if (networks.isEmpty()) {
+            clearWifiNetworks()
+        } else {
             upsertWifiNetworks(networks)
+            deleteWifiNetworksExcept(networks.map { it.ssid })
         }
     }
 
@@ -173,11 +223,16 @@ interface VelaDao {
     @Query("DELETE FROM vela_bluetooth_devices")
     suspend fun clearBluetoothDevices()
 
+    @Query("DELETE FROM vela_bluetooth_devices WHERE address NOT IN (:addresses)")
+    suspend fun deleteBluetoothDevicesExcept(addresses: List<String>)
+
     @Transaction
     suspend fun replaceBluetoothDevices(devices: List<VelaBluetoothDeviceEntity>) {
-        clearBluetoothDevices()
-        if (devices.isNotEmpty()) {
+        if (devices.isEmpty()) {
+            clearBluetoothDevices()
+        } else {
             upsertBluetoothDevices(devices)
+            deleteBluetoothDevicesExcept(devices.map { it.address })
         }
     }
 
@@ -214,11 +269,16 @@ interface VelaDao {
     @Query("DELETE FROM vela_gpu_usage")
     suspend fun clearGpuUsage()
 
+    @Query("DELETE FROM vela_gpu_usage WHERE name NOT IN (:names)")
+    suspend fun deleteGpuUsageExcept(names: List<String>)
+
     @Transaction
     suspend fun replaceGpuUsage(gpuUsage: List<VelaGpuUsageEntity>) {
-        clearGpuUsage()
-        if (gpuUsage.isNotEmpty()) {
+        if (gpuUsage.isEmpty()) {
+            clearGpuUsage()
+        } else {
             upsertGpuUsage(gpuUsage)
+            deleteGpuUsageExcept(gpuUsage.map { it.name })
         }
     }
 
@@ -231,11 +291,16 @@ interface VelaDao {
     @Query("DELETE FROM vela_disk_io")
     suspend fun clearDiskIo()
 
+    @Query("DELETE FROM vela_disk_io WHERE device NOT IN (:devices)")
+    suspend fun deleteDiskIoExcept(devices: List<String>)
+
     @Transaction
     suspend fun replaceDiskIo(diskIo: List<VelaDiskIoEntity>) {
-        clearDiskIo()
-        if (diskIo.isNotEmpty()) {
+        if (diskIo.isEmpty()) {
+            clearDiskIo()
+        } else {
             upsertDiskIo(diskIo)
+            deleteDiskIoExcept(diskIo.map { it.device })
         }
     }
 
@@ -248,11 +313,16 @@ interface VelaDao {
     @Query("DELETE FROM vela_network_io")
     suspend fun clearNetworkIo()
 
+    @Query("DELETE FROM vela_network_io WHERE interfaceName NOT IN (:interfaces)")
+    suspend fun deleteNetworkIoExcept(interfaces: List<String>)
+
     @Transaction
     suspend fun replaceNetworkIo(networkIo: List<VelaNetworkIoEntity>) {
-        clearNetworkIo()
-        if (networkIo.isNotEmpty()) {
+        if (networkIo.isEmpty()) {
+            clearNetworkIo()
+        } else {
             upsertNetworkIo(networkIo)
+            deleteNetworkIoExcept(networkIo.map { it.interfaceName })
         }
     }
 
@@ -265,11 +335,16 @@ interface VelaDao {
     @Query("DELETE FROM vela_temperatures")
     suspend fun clearTemperatures()
 
+    @Query("DELETE FROM vela_temperatures WHERE id NOT IN (:ids)")
+    suspend fun deleteTemperaturesExcept(ids: List<String>)
+
     @Transaction
     suspend fun replaceTemperatures(temperatures: List<VelaTemperatureEntity>) {
-        clearTemperatures()
-        if (temperatures.isNotEmpty()) {
+        if (temperatures.isEmpty()) {
+            clearTemperatures()
+        } else {
             upsertTemperatures(temperatures)
+            deleteTemperaturesExcept(temperatures.map { it.id })
         }
     }
 
@@ -282,11 +357,16 @@ interface VelaDao {
     @Query("DELETE FROM vela_sensors")
     suspend fun clearSensors()
 
+    @Query("DELETE FROM vela_sensors WHERE name NOT IN (:names)")
+    suspend fun deleteSensorsExcept(names: List<String>)
+
     @Transaction
     suspend fun replaceSensors(sensors: List<VelaSensorEntity>) {
-        clearSensors()
-        if (sensors.isNotEmpty()) {
+        if (sensors.isEmpty()) {
+            clearSensors()
+        } else {
             upsertSensors(sensors)
+            deleteSensorsExcept(sensors.map { it.name })
         }
     }
 
@@ -299,11 +379,16 @@ interface VelaDao {
     @Query("DELETE FROM vela_fans")
     suspend fun clearFans()
 
+    @Query("DELETE FROM vela_fans WHERE id NOT IN (:ids)")
+    suspend fun deleteFansExcept(ids: List<String>)
+
     @Transaction
     suspend fun replaceFans(fans: List<VelaFanEntity>) {
-        clearFans()
-        if (fans.isNotEmpty()) {
+        if (fans.isEmpty()) {
+            clearFans()
+        } else {
             upsertFans(fans)
+            deleteFansExcept(fans.map { it.id })
         }
     }
 
@@ -342,9 +427,11 @@ interface VelaDao {
 
     @Transaction
     suspend fun replaceScheduledTasks(tasks: List<VelaScheduledTaskEntity>) {
-        clearScheduledTasks()
-        if (tasks.isNotEmpty()) {
+        if (tasks.isEmpty()) {
+            clearScheduledTasks()
+        } else {
             upsertScheduledTasks(tasks)
+            // Note: deleteScheduledTasksExcept might be needed here too
         }
     }
 
@@ -359,9 +446,11 @@ interface VelaDao {
 
     @Transaction
     suspend fun replaceFiles(parentPath: String, files: List<VelaFileEntity>) {
-        clearFiles(parentPath)
-        if (files.isNotEmpty()) {
+        if (files.isEmpty()) {
+            clearFiles(parentPath)
+        } else {
             upsertFiles(files)
+            // Note: deleteFilesExcept might be needed here too
         }
     }
 

@@ -44,6 +44,9 @@ class NetworkRepositoryImpl @Inject constructor(
             )
         }
 
+    override fun observeNetUsage(): Flow<NetUsage?> =
+        velaDao.observeNetUsage().map { it?.toDomain() }
+
     override suspend fun getNetworkInfo(): Resource<VelaNetworkInfo> = safeApiCall {
         val response = apiService.getNetworkIp()
         val domain = VelaNetworkInfo(
@@ -172,8 +175,6 @@ class NetworkRepositoryImpl @Inject constructor(
         val allDevices = (connected + paired).distinctBy { it.address }
         
         velaDao.replaceBluetoothDevices(allDevices.map { VelaBluetoothDeviceEntity.fromDomain(it) })
-        
-        // Also ensure the base bluetooth state entity exists so observers trigger
         velaDao.upsertBluetoothState(VelaBluetoothEntity(isEnabled = true))
         
         VelaBluetoothStatus(connected, paired, true)
@@ -217,5 +218,19 @@ class NetworkRepositoryImpl @Inject constructor(
             uploadMbps = res.uploadMbps ?: 0.0,
             pingMs = res.pingMs ?: 0.0
         )
+    }
+
+    override suspend fun getNetworkUsage(period: String): Resource<NetUsage> = safeApiCall {
+        val res = apiService.getNetworkUsage(period)
+        val domain = NetUsage(
+            interfaceName = res.interfaceName,
+            period = res.period,
+            receivedBytes = res.receivedBytes,
+            transmittedBytes = res.transmittedBytes,
+            received = res.received,
+            transmitted = res.transmitted
+        )
+        velaDao.upsertNetUsage(NetUsageEntity.fromDomain(domain))
+        domain
     }
 }

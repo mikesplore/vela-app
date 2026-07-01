@@ -15,8 +15,11 @@ interface MonitorRepository {
     fun observeBattery(): Flow<VelaBatteryStatus?>
     fun observeTopProcessesByCpu(limit: Int = 5): Flow<List<VelaProcess>>
     fun observeTopProcessesByMemory(limit: Int = 5): Flow<List<VelaProcess>>
+    
+    fun observeUptime(): Flow<VelaUptime?>
+    suspend fun getUptime(): Resource<VelaUptime>
+
     suspend fun getCpuUsage(): Resource<VelaCpuUsage>
     suspend fun getRamUsage(): Resource<VelaRamUsage>
     suspend fun getMonitorSnapshot(): Resource<VelaMonitorSnapshot>
-
 }

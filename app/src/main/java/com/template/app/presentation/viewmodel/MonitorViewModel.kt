@@ -24,7 +24,6 @@ data class MonitorState(
     val battery: VelaBatteryStatus? = null,
     val topProcessesByCpu: List<VelaProcess> = emptyList(),
     val topProcessesByMemory: List<VelaProcess> = emptyList(),
-    val updateIntervalMs: Long = 2000,
     val isRefreshing: Boolean = false,
     val error: String? = null
 )
@@ -41,7 +40,6 @@ class MonitorViewModel @Inject constructor(
 
     init {
         observeMonitorData()
-        startPolling()
     }
 
     private fun observeMonitorData() {
@@ -90,32 +88,6 @@ class MonitorViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    fun startPolling() {
-        pollingJob?.cancel()
-        pollingJob = viewModelScope.launch {
-            while (true) {
-                refreshMonitorData()
-                delay(state.value.updateIntervalMs)
-            }
-        }
-    }
-
-    fun setUpdateInterval(intervalMs: Long) {
-        _state.update { it.copy(updateIntervalMs = intervalMs) }
-        startPolling()
-    }
-
-    // MonitorViewModel.kt
-
-    suspend fun refreshMonitorData() {
-        _state.update { it.copy(isRefreshing = true, error = null) }
-        // We only care about the result for error handling/loading state
-        val result = repository.getMonitorSnapshot()
-        if (result is Resource.Error) {
-            _state.update { it.copy(error = result.message) }
-        }
-        _state.update { it.copy(isRefreshing = false) }
-    }
 
     override fun onCleared() {
         super.onCleared()

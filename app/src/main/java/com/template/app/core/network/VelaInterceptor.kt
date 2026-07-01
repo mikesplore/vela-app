@@ -7,6 +7,9 @@ import okhttp3.Interceptor
 import okhttp3.Response
 import javax.inject.Inject
 
+/**
+ * Automatically attaches the Base URL and API token to every outgoing request.
+ */
 class VelaInterceptor @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : Interceptor {

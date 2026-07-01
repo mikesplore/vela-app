@@ -27,13 +27,9 @@ class ConfigRepositoryImpl @Inject constructor(
             homeDirectory = response.homeDirectory,
             username = response.username
         )
-        // Add a log here to see if the code actually reaches this point
-       Log.i("ConfigRepositoryImpl", "Saving config to database: $domain")
 
         velaDao.upsertConfig(VelaConfigEntity.fromDomain(domain))
         domain
-
-
     }
 
     override suspend fun setConfig(config: VelaConfig): Resource<Unit> = safeApiCall {

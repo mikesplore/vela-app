@@ -8,6 +8,7 @@ interface NetworkRepository {
     fun observeNetwork(): Flow<VelaNetworkInfo?>
     fun observeWifi(): Flow<VelaWifiStatus?>
     fun observeBluetooth(): Flow<VelaBluetoothStatus?>
+    fun observeNetUsage(): Flow<NetUsage?>
 
     suspend fun getNetworkInfo(): Resource<VelaNetworkInfo>
     suspend fun getNetworkLocation(): Resource<VelaNetworkInfo>
@@ -27,4 +28,5 @@ interface NetworkRepository {
 
     suspend fun pingHost(host: String, count: Int): Resource<VelaPingResult>
     suspend fun runSpeedTest(): Resource<VelaSpeedTest>
+    suspend fun getNetworkUsage(period: String): Resource<NetUsage>
 }

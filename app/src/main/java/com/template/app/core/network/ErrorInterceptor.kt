@@ -10,7 +10,9 @@ import java.io.IOException
 import javax.inject.Inject
 
 /**
- * Intercepts network responses and emits snackbar events for errors.
+ * Intercepts network responses and emits logging events for errors.
+ * Global UI events (like 401 redirects) are handled here, while
+ * user-facing messages are typically returned via Resource.Error in SafeApiCall.
  */
 class ErrorInterceptor @Inject constructor(
     private val appEventManager: AppEventManager,
@@ -22,8 +24,8 @@ class ErrorInterceptor @Inject constructor(
         val response = try {
             chain.proceed(request)
         } catch (e: IOException) {
-            val errorMessage = "Network error — check your connection"
-            appEventManager.showNetworkErrorSnackbar(errorMessage)
+            val errorMessage = NetworkErrors.NETWORK_ERROR
+            // Log the error globally
             appEventManager.addNetworkErrorLog(
                 url = request.url.toString(),
                 method = request.method,
@@ -43,21 +45,20 @@ class ErrorInterceptor @Inject constructor(
                 }
             }
 
-            val errorMessage = apiError?.message ?: when (response.code) {
-                401 -> "Unauthorized — please log in again"
-                403 -> "Forbidden"
-                404 -> "Resource not found"
-                500 -> "Server error, please try again later"
-                else -> "Error ${response.code}: ${response.message}"
-            }
-            appEventManager.showNetworkErrorSnackbar(errorMessage)
+            val errorMessage = apiError?.message ?: NetworkErrors.getMessageForCode(response.code)
             
+            // Add to network logs for debugging
             appEventManager.addNetworkErrorLog(
                 url = request.url.toString(),
                 method = request.method,
                 code = response.code,
                 message = errorMessage
             )
+
+            // Handle global session expiry
+            if (response.code == 401) {
+                appEventManager.showNetworkErrorSnackbar("Session expired. Please log in again.")
+            }
 
             // Re-create the response body since we've consumed it
             return response.newBuilder()
